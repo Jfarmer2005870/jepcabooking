@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import ChatDialog from "@/components/chat/ChatDialog";
 import { 
   MapPin, 
   Star, 
@@ -30,7 +31,8 @@ import {
   Truck,
   Hammer,
   Wind,
-  Bug
+  Bug,
+  MessageSquare
 } from "lucide-react";
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -94,6 +96,7 @@ const ServiceDetail = () => {
   const [time, setTime] = useState("");
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -345,6 +348,18 @@ const ServiceDetail = () => {
                       <strong>Service Area:</strong> {service.business_profiles.service_area}
                     </p>
                   )}
+                  
+                  {/* Message Business Button */}
+                  {user && userRole === "consumer" && (
+                    <Button
+                      variant="outline"
+                      className="w-full mt-4"
+                      onClick={() => setIsChatOpen(true)}
+                    >
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Message Business
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -466,6 +481,16 @@ const ServiceDetail = () => {
         </div>
       </main>
       <Footer />
+      
+      {/* Chat Dialog */}
+      {service && (
+        <ChatDialog
+          open={isChatOpen}
+          onOpenChange={setIsChatOpen}
+          businessId={service.business_profiles.id}
+          businessName={service.business_profiles.business_name}
+        />
+      )}
     </div>
   );
 };
