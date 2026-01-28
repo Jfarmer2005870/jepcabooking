@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,73 +62,73 @@ const Profile = () => {
     }
   }, [user, authLoading, navigate]);
 
-  const fetchProfile = useCallback(async () => {
-    if (!user) return;
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
 
-    setLoading(true);
-    try {
-      // Fetch user profile
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (profileError && profileError.code !== "PGRST116") {
-        console.error("Error fetching profile:", profileError);
-      }
-
-      if (profileData) {
-        setProfile({
-          full_name: profileData.full_name || "",
-          phone: profileData.phone || "",
-          bio: profileData.bio || "",
-          avatar_url: profileData.avatar_url || "",
-        });
-      }
-
-      // Fetch business profile if business user
-      if (userRole === "business") {
-        const { data: businessData, error: businessError } = await supabase
-          .from("business_profiles")
+      setLoading(true);
+      try {
+        // Fetch user profile
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
           .select("*")
           .eq("user_id", user.id)
           .maybeSingle();
 
-        if (businessError && businessError.code !== "PGRST116") {
-          console.error("Error fetching business profile:", businessError);
+        if (profileError && profileError.code !== "PGRST116") {
+          console.error("Error fetching profile:", profileError);
         }
 
-        if (businessData) {
-          setBusinessProfile({
-            business_name: businessData.business_name || "",
-            description: businessData.description || "",
-            website: businessData.website || "",
-            address: businessData.address || "",
-            city: businessData.city || "",
-            state: businessData.state || "",
-            zip_code: businessData.zip_code || "",
-            service_area: businessData.service_area || "",
+        if (profileData) {
+          setProfile({
+            full_name: profileData.full_name || "",
+            phone: profileData.phone || "",
+            bio: profileData.bio || "",
+            avatar_url: profileData.avatar_url || "",
           });
         }
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      toast({
-        title: "Error loading profile",
-        description: "Could not load your profile data. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [user, userRole, toast]);
 
-  useEffect(() => {
+        // Fetch business profile if business user
+        if (userRole === "business") {
+          const { data: businessData, error: businessError } = await supabase
+            .from("business_profiles")
+            .select("*")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (businessError && businessError.code !== "PGRST116") {
+            console.error("Error fetching business profile:", businessError);
+          }
+
+          if (businessData) {
+            setBusinessProfile({
+              business_name: businessData.business_name || "",
+              description: businessData.description || "",
+              website: businessData.website || "",
+              address: businessData.address || "",
+              city: businessData.city || "",
+              state: businessData.state || "",
+              zip_code: businessData.zip_code || "",
+              service_area: businessData.service_area || "",
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        toast({
+          title: "Error loading profile",
+          description: "Could not load your profile data. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (user) {
       fetchProfile();
     }
-  }, [user, fetchProfile]);
+  }, [user, userRole, toast]);
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -436,11 +436,16 @@ const Profile = () => {
               </Card>
             )}
 
-            <div className="flex justify-end">
+            <div className="flex justify-end pt-4">
               <Button 
-                onClick={handleSaveProfile} 
+                type="button"
+                onClick={() => {
+                  console.log("Button clicked");
+                  handleSaveProfile();
+                }} 
                 disabled={saving}
                 size="lg"
+                className="min-w-[160px]"
               >
                 {saving ? (
                   <>
