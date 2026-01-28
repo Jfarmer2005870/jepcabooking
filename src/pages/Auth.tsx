@@ -33,7 +33,7 @@ const Auth = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user && !loading) {
-      navigate("/");
+      navigate("/dashboard");
     }
   }, [user, loading, navigate]);
 
@@ -98,7 +98,7 @@ const Auth = () => {
             title: "Welcome back!",
             description: "You have successfully logged in.",
           });
-          navigate("/");
+          navigate("/dashboard");
         }
       } else {
         if (!userType) {
@@ -137,7 +137,7 @@ const Auth = () => {
             title: "Account created!",
             description: "Welcome to Jepca. Your account is ready.",
           });
-          navigate("/");
+          navigate("/dashboard");
         }
       }
     } catch (error) {
