@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
@@ -5,7 +6,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 const CTASection = () => {
   const benefits = [
     "No setup fees",
-    "14-day free trial",
+    "Free to get started",
     "Cancel anytime",
     "24/7 support",
   ];
@@ -36,7 +37,7 @@ const CTASection = () => {
             className="text-lg md:text-xl text-primary-foreground/80 mb-8 max-w-2xl mx-auto"
           >
             Join thousands of service professionals who are growing their business with Jepca.
-            Start your free trial today.
+            Get started today.
           </motion.p>
 
           {/* Benefits */}
@@ -66,16 +67,20 @@ const CTASection = () => {
             <Button
               size="xl"
               className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-strong"
+              asChild
             >
-              Get Started Free
-              <ArrowRight className="w-5 h-5" />
+              <Link to="/auth">
+                Get Started Free
+                <ArrowRight className="w-5 h-5" />
+              </Link>
             </Button>
             <Button
               size="xl"
               variant="heroOutline"
               className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+              asChild
             >
-              Talk to Sales
+              <Link to="/services">Browse Services</Link>
             </Button>
           </motion.div>
         </div>

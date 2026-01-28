@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,12 +86,14 @@ const BusinessFeatures = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button size="lg" variant="accent">
-                Start Free Trial
-                <ArrowRight className="w-4 h-4" />
+              <Button size="lg" variant="accent" asChild>
+                <Link to="/auth">
+                  Get Started
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
               </Button>
-              <Button size="lg" variant="outline">
-                Schedule Demo
+              <Button size="lg" variant="outline" asChild>
+                <Link to="/services">Browse Services</Link>
               </Button>
             </div>
           </motion.div>
