@@ -1,7 +1,7 @@
 import React, { useState, forwardRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, LogOut, User, Building2 } from "lucide-react";
+import { Menu, X, LogOut, User, Building2, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -11,9 +11,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import ChatDialog from "@/components/chat/ChatDialog";
 
 const Header = forwardRef<HTMLElement>((props, ref) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const { user, userRole, signOut, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -101,37 +103,51 @@ const Header = forwardRef<HTMLElement>((props, ref) => {
             {loading ? (
               <div className="w-20 h-9 bg-secondary animate-pulse rounded-md" />
             ) : user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    {userRole === "business" ? (
-                      <Building2 className="w-4 h-4" />
-                    ) : (
-                      <User className="w-4 h-4" />
-                    )}
-                    <span className="max-w-[120px] truncate">
-                      {user.email?.split("@")[0]}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem className="text-muted-foreground text-xs">
-                    {userRole === "business" ? "Business Account" : "Consumer Account"}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/profile")}>
-                    Profile
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsChatOpen(true)}
+                  className="relative"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2">
+                      {userRole === "business" ? (
+                        <Building2 className="w-4 h-4" />
+                      ) : (
+                        <User className="w-4 h-4" />
+                      )}
+                      <span className="max-w-[120px] truncate">
+                        {user.email?.split("@")[0]}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem className="text-muted-foreground text-xs">
+                      {userRole === "business" ? "Business Account" : "Consumer Account"}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/profile")}>
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsChatOpen(true)}>
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Messages
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <>
                 <Button variant="ghost" size="sm" asChild>
@@ -216,6 +232,17 @@ const Header = forwardRef<HTMLElement>((props, ref) => {
                         Dashboard
                       </Button>
                       <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                        onClick={() => {
+                          setIsChatOpen(true);
+                          setIsMenuOpen(false);
+                        }}
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Messages
+                      </Button>
+                      <Button
                         variant="destructive"
                         className="w-full"
                         onClick={() => {
@@ -247,6 +274,9 @@ const Header = forwardRef<HTMLElement>((props, ref) => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Chat Dialog */}
+      <ChatDialog open={isChatOpen} onOpenChange={setIsChatOpen} />
     </header>
   );
 });
