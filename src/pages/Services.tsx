@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/layout/Header";
@@ -68,7 +68,7 @@ interface Service {
   };
 }
 
-const Services = () => {
+const Services = forwardRef<HTMLDivElement>((_, ref) => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -130,7 +130,7 @@ const Services = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div ref={ref} className="min-h-screen flex flex-col bg-background">
       <Header />
       <main className="flex-1 pt-20 md:pt-24">
         {/* Hero Section */}
@@ -277,6 +277,8 @@ const Services = () => {
       <Footer />
     </div>
   );
-};
+});
+
+Services.displayName = "Services";
 
 export default Services;

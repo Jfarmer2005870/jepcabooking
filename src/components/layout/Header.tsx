@@ -19,9 +19,33 @@ const Header = forwardRef<HTMLElement>((props, ref) => {
 
   const navLinks = [
     { label: "Find Services", href: "/services", isRoute: true },
-    { label: "For Business", href: "#business" },
-    { label: "How It Works", href: "#how-it-works" },
+    { label: "For Business", href: "/#business", isAnchor: true },
+    { label: "How It Works", href: "/#how-it-works", isAnchor: true },
   ];
+
+  const handleAnchorClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault();
+    const isHomePage = window.location.pathname === "/";
+    const anchor = href.replace("/#", "#");
+    
+    if (isHomePage) {
+      // Already on home page, just scroll to section
+      const element = document.querySelector(anchor);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    } else {
+      // Navigate to home page then scroll
+      navigate("/");
+      setTimeout(() => {
+        const element = document.querySelector(anchor);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+    setIsMenuOpen(false);
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -51,6 +75,15 @@ const Header = forwardRef<HTMLElement>((props, ref) => {
                 >
                   {link.label}
                 </Link>
+              ) : link.isAnchor ? (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  onClick={(e) => handleAnchorClick(e, link.href)}
+                  className="text-muted-foreground hover:text-foreground transition-colors font-medium cursor-pointer"
+                >
+                  {link.label}
+                </a>
               ) : (
                 <a
                   key={link.label}
@@ -144,6 +177,15 @@ const Header = forwardRef<HTMLElement>((props, ref) => {
                     >
                       {link.label}
                     </Link>
+                  ) : link.isAnchor ? (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      onClick={(e) => handleAnchorClick(e, link.href)}
+                      className="py-3 px-4 text-foreground hover:bg-secondary rounded-lg transition-colors font-medium cursor-pointer"
+                    >
+                      {link.label}
+                    </a>
                   ) : (
                     <a
                       key={link.label}
