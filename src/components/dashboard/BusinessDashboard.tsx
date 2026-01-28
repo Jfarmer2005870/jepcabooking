@@ -14,7 +14,9 @@ import {
   TrendingUp,
   CheckCircle,
   XCircle,
-  Loader2
+  Loader2,
+  Phone,
+  Mail
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AddServiceDialog from "./AddServiceDialog";
@@ -51,6 +53,7 @@ interface Booking {
   profiles: {
     full_name: string | null;
     email: string;
+    phone: string | null;
   } | null;
 }
 
@@ -128,7 +131,7 @@ const BusinessDashboard = () => {
           (bookingsData || []).map(async (booking) => {
             const { data: profileData } = await supabase
               .from("profiles")
-              .select("full_name, email")
+              .select("full_name, email, phone")
               .eq("user_id", booking.consumer_id)
               .maybeSingle();
             
@@ -271,7 +274,7 @@ const BusinessDashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
                     {booking.scheduled_date && (
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
@@ -285,8 +288,35 @@ const BusinessDashboard = () => {
                       </span>
                     )}
                   </div>
+                  
+                  {/* Customer Contact Info */}
+                  <div className="bg-background rounded-md p-3 mb-3 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Customer Contact</p>
+                    {booking.profiles?.email && (
+                      <p className="text-sm flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                        <a href={`mailto:${booking.profiles.email}`} className="text-primary hover:underline">
+                          {booking.profiles.email}
+                        </a>
+                      </p>
+                    )}
+                    {booking.profiles?.phone && (
+                      <p className="text-sm flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                        <a href={`tel:${booking.profiles.phone}`} className="text-primary hover:underline">
+                          {booking.profiles.phone}
+                        </a>
+                      </p>
+                    )}
+                    {!booking.profiles?.phone && (
+                      <p className="text-xs text-muted-foreground italic">No phone number provided</p>
+                    )}
+                  </div>
+                  
                   {booking.notes && (
-                    <p className="text-sm text-muted-foreground mb-4">"{booking.notes}"</p>
+                    <p className="text-sm text-muted-foreground mb-4 bg-muted/50 p-2 rounded">
+                      <span className="font-medium">Notes:</span> "{booking.notes}"
+                    </p>
                   )}
                   <div className="flex gap-2">
                     <Button
@@ -397,17 +427,47 @@ const BusinessDashboard = () => {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
                     {booking.scheduled_date && (
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
                         {new Date(booking.scheduled_date).toLocaleDateString()}
                       </span>
                     )}
+                    {booking.scheduled_time && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-4 h-4" />
+                        {booking.scheduled_time}
+                      </span>
+                    )}
                     {booking.total_price && (
                       <span className="font-semibold text-primary">
                         ${booking.total_price.toFixed(2)}
                       </span>
+                    )}
+                  </div>
+                  
+                  {/* Customer Contact Info */}
+                  <div className="bg-muted/50 rounded-md p-3 mb-3 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Customer Contact</p>
+                    {booking.profiles?.email && (
+                      <p className="text-sm flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                        <a href={`mailto:${booking.profiles.email}`} className="text-primary hover:underline">
+                          {booking.profiles.email}
+                        </a>
+                      </p>
+                    )}
+                    {booking.profiles?.phone && (
+                      <p className="text-sm flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                        <a href={`tel:${booking.profiles.phone}`} className="text-primary hover:underline">
+                          {booking.profiles.phone}
+                        </a>
+                      </p>
+                    )}
+                    {!booking.profiles?.phone && (
+                      <p className="text-xs text-muted-foreground italic">No phone number provided</p>
                     )}
                   </div>
                   <div className="flex gap-2">
