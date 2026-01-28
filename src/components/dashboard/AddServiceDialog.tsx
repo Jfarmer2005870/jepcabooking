@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { serviceSchema, validateForm } from "@/lib/validations";
 
 interface AddServiceDialogProps {
   open: boolean;
@@ -40,46 +41,79 @@ const categories = [
   { value: "hvac", label: "HVAC" },
   { value: "pest_control", label: "Pest Control" },
   { value: "other", label: "Other" },
-];
+] as const;
 
 const priceTypes = [
   { value: "fixed", label: "Fixed Price" },
   { value: "hourly", label: "Hourly Rate" },
   { value: "quote", label: "Request Quote" },
-];
+] as const;
+
+type CategoryValue = typeof categories[number]["value"];
+type PriceTypeValue = typeof priceTypes[number]["value"];
 
 const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: AddServiceDialogProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    category: "other",
-    price_type: "fixed",
+    category: "other" as CategoryValue,
+    price_type: "fixed" as PriceTypeValue,
     price_min: "",
     price_max: "",
     duration_minutes: "",
   });
 
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      category: "other",
+      price_type: "fixed",
+      price_min: "",
+      price_max: "",
+      duration_minutes: "",
+    });
+    setErrors({});
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title.trim()) {
+    // Prepare data for validation
+    const dataToValidate = {
+      title: formData.title,
+      description: formData.description || undefined,
+      category: formData.category,
+      price_type: formData.price_type,
+      price_min: formData.price_min ? parseFloat(formData.price_min) : undefined,
+      price_max: formData.price_max ? parseFloat(formData.price_max) : undefined,
+      duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : undefined,
+    };
+
+    const validation = validateForm(serviceSchema, dataToValidate);
+    
+    if (!validation.success) {
+      setErrors(validation.errors || {});
       toast({
-        title: "Error",
-        description: "Please enter a service title.",
+        title: "Validation error",
+        description: "Please fix the errors below.",
         variant: "destructive",
       });
       return;
     }
 
+    setErrors({});
     setLoading(true);
+
     try {
       const { error } = await supabase.from("services").insert({
         business_id: businessId,
-        title: formData.title,
-        description: formData.description || null,
-        category: formData.category as "cleaning" | "plumbing" | "electrical" | "landscaping" | "painting" | "moving" | "handyman" | "hvac" | "pest_control" | "other",
+        title: formData.title.trim(),
+        description: formData.description.trim() || null,
+        category: formData.category,
         price_type: formData.price_type,
         price_min: formData.price_min ? parseFloat(formData.price_min) : null,
         price_max: formData.price_max ? parseFloat(formData.price_max) : null,
@@ -94,16 +128,7 @@ const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: Ad
         description: "Your service has been created successfully.",
       });
 
-      // Reset form and close dialog
-      setFormData({
-        title: "",
-        description: "",
-        category: "other",
-        price_type: "fixed",
-        price_min: "",
-        price_max: "",
-        duration_minutes: "",
-      });
+      resetForm();
       onOpenChange(false);
       onServiceAdded();
     } catch (error) {
@@ -118,8 +143,13 @@ const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: Ad
     }
   };
 
+  const handleClose = () => {
+    resetForm();
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add New Service</DialogTitle>
@@ -135,7 +165,12 @@ const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: Ad
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               placeholder="e.g., Deep House Cleaning"
+              className={errors.title ? "border-destructive" : ""}
+              maxLength={100}
             />
+            {errors.title && (
+              <p className="text-sm text-destructive">{errors.title}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -146,7 +181,13 @@ const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: Ad
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Describe what's included in this service..."
               rows={3}
+              className={errors.description ? "border-destructive" : ""}
+              maxLength={1000}
             />
+            {errors.description && (
+              <p className="text-sm text-destructive">{errors.description}</p>
+            )}
+            <p className="text-xs text-muted-foreground">{formData.description.length}/1000 characters</p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -154,9 +195,9 @@ const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: Ad
               <Label htmlFor="category">Category</Label>
               <Select
                 value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                onValueChange={(value: CategoryValue) => setFormData({ ...formData, category: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className={errors.category ? "border-destructive" : ""}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -167,15 +208,18 @@ const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: Ad
                   ))}
                 </SelectContent>
               </Select>
+              {errors.category && (
+                <p className="text-sm text-destructive">{errors.category}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="priceType">Pricing Type</Label>
               <Select
                 value={formData.price_type}
-                onValueChange={(value) => setFormData({ ...formData, price_type: value })}
+                onValueChange={(value: PriceTypeValue) => setFormData({ ...formData, price_type: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className={errors.price_type ? "border-destructive" : ""}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -186,6 +230,9 @@ const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: Ad
                   ))}
                 </SelectContent>
               </Select>
+              {errors.price_type && (
+                <p className="text-sm text-destructive">{errors.price_type}</p>
+              )}
             </div>
           </div>
 
@@ -199,11 +246,16 @@ const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: Ad
                   id="priceMin"
                   type="number"
                   min="0"
+                  max="999999.99"
                   step="0.01"
                   value={formData.price_min}
                   onChange={(e) => setFormData({ ...formData, price_min: e.target.value })}
                   placeholder="0.00"
+                  className={errors.price_min ? "border-destructive" : ""}
                 />
+                {errors.price_min && (
+                  <p className="text-sm text-destructive">{errors.price_min}</p>
+                )}
               </div>
 
               {formData.price_type === "fixed" && (
@@ -213,11 +265,16 @@ const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: Ad
                     id="priceMax"
                     type="number"
                     min="0"
+                    max="999999.99"
                     step="0.01"
                     value={formData.price_max}
                     onChange={(e) => setFormData({ ...formData, price_max: e.target.value })}
                     placeholder="0.00"
+                    className={errors.price_max ? "border-destructive" : ""}
                   />
+                  {errors.price_max && (
+                    <p className="text-sm text-destructive">{errors.price_max}</p>
+                  )}
                 </div>
               )}
             </div>
@@ -228,15 +285,20 @@ const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: Ad
             <Input
               id="duration"
               type="number"
-              min="0"
+              min="1"
+              max="1440"
               value={formData.duration_minutes}
               onChange={(e) => setFormData({ ...formData, duration_minutes: e.target.value })}
               placeholder="e.g., 120"
+              className={errors.duration_minutes ? "border-destructive" : ""}
             />
+            {errors.duration_minutes && (
+              <p className="text-sm text-destructive">{errors.duration_minutes}</p>
+            )}
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
