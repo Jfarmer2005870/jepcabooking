@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          business_id: string
+          consumer_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          scheduled_date: string | null
+          scheduled_time: string | null
+          service_id: string
+          status: Database["public"]["Enums"]["booking_status"]
+          total_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          consumer_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          service_id: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          total_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          consumer_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          service_id?: string
+          status?: Database["public"]["Enums"]["booking_status"]
+          total_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_profiles: {
         Row: {
           address: string | null
@@ -107,6 +164,104 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          booking_id: string
+          business_id: string
+          comment: string | null
+          consumer_id: string
+          created_at: string
+          id: string
+          rating: number
+        }
+        Insert: {
+          booking_id: string
+          business_id: string
+          comment?: string | null
+          consumer_id: string
+          created_at?: string
+          id?: string
+          rating: number
+        }
+        Update: {
+          booking_id?: string
+          business_id?: string
+          comment?: string | null
+          consumer_id?: string
+          created_at?: string
+          id?: string
+          rating?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          business_id: string
+          category: Database["public"]["Enums"]["service_category"]
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          id: string
+          is_active: boolean | null
+          price_max: number | null
+          price_min: number | null
+          price_type: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          category?: Database["public"]["Enums"]["service_category"]
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          price_max?: number | null
+          price_min?: number | null
+          price_type?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          category?: Database["public"]["Enums"]["service_category"]
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          id?: string
+          is_active?: boolean | null
+          price_max?: number | null
+          price_min?: number | null
+          price_type?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "services_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -139,6 +294,23 @@ export type Database = {
       }
     }
     Enums: {
+      booking_status:
+        | "pending"
+        | "confirmed"
+        | "in_progress"
+        | "completed"
+        | "cancelled"
+      service_category:
+        | "cleaning"
+        | "plumbing"
+        | "electrical"
+        | "landscaping"
+        | "painting"
+        | "moving"
+        | "handyman"
+        | "hvac"
+        | "pest_control"
+        | "other"
       user_role: "consumer" | "business"
     }
     CompositeTypes: {
@@ -267,6 +439,25 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      booking_status: [
+        "pending",
+        "confirmed",
+        "in_progress",
+        "completed",
+        "cancelled",
+      ],
+      service_category: [
+        "cleaning",
+        "plumbing",
+        "electrical",
+        "landscaping",
+        "painting",
+        "moving",
+        "handyman",
+        "hvac",
+        "pest_control",
+        "other",
+      ],
       user_role: ["consumer", "business"],
     },
   },
