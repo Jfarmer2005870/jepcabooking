@@ -64,7 +64,7 @@ const Profile = () => {
     if (user) {
       fetchProfile();
     }
-  }, [user]);
+  }, [user, userRole]);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -123,9 +123,11 @@ const Profile = () => {
   };
 
   const handleSaveProfile = async () => {
+    console.log("Save button clicked, user:", user?.id, "saving:", saving);
     if (!user) return;
 
     setSaving(true);
+    console.log("Starting save...");
     try {
       // Update user profile
       const { error: profileError } = await supabase
