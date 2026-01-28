@@ -16,7 +16,8 @@ import {
   XCircle,
   Loader2,
   Phone,
-  Mail
+  Mail,
+  MapPin
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AddServiceDialog from "./AddServiceDialog";
@@ -44,6 +45,7 @@ interface Booking {
   status: string;
   scheduled_date: string | null;
   scheduled_time: string | null;
+  service_address: string | null;
   notes: string | null;
   total_price: number | null;
   created_at: string;
@@ -290,6 +292,18 @@ const BusinessDashboard = () => {
                   </div>
                   
                   {/* Customer Contact Info */}
+                  {/* Service Address */}
+                  {booking.service_address && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-md p-3 mb-3">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Service Location</p>
+                      <p className="text-sm flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                        <span className="text-foreground">{booking.service_address}</span>
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Customer Contact Info */}
                   <div className="bg-background rounded-md p-3 mb-3 space-y-1">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Customer Contact</p>
                     {booking.profiles?.email && (
@@ -446,6 +460,17 @@ const BusinessDashboard = () => {
                       </span>
                     )}
                   </div>
+                  
+                  {/* Service Address */}
+                  {booking.service_address && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-md p-3 mb-3">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Service Location</p>
+                      <p className="text-sm flex items-start gap-2">
+                        <MapPin className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                        <span className="text-foreground">{booking.service_address}</span>
+                      </p>
+                    </div>
+                  )}
                   
                   {/* Customer Contact Info */}
                   <div className="bg-muted/50 rounded-md p-3 mb-3 space-y-1">

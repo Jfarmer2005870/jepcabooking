@@ -92,6 +92,7 @@ const ServiceDetail = () => {
   const [booking, setBooking] = useState(false);
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState("");
+  const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
@@ -154,6 +155,24 @@ const ServiceDetail = () => {
       return;
     }
 
+    if (!time) {
+      toast({
+        title: "Select a time",
+        description: "Please select a preferred time for the service.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!address.trim()) {
+      toast({
+        title: "Enter service address",
+        description: "Please enter the address where the service will be performed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setBooking(true);
     try {
       const { error } = await supabase.from("bookings").insert({
@@ -161,7 +180,8 @@ const ServiceDetail = () => {
         consumer_id: user.id,
         business_id: service!.business_profiles.id,
         scheduled_date: format(date, "yyyy-MM-dd"),
-        scheduled_time: time || null,
+        scheduled_time: time,
+        service_address: address.trim(),
         notes: notes || null,
         total_price: service!.price_min || null,
         status: "pending",
@@ -364,12 +384,25 @@ const ServiceDetail = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="time">Preferred Time (optional)</Label>
+                    <Label htmlFor="time">Preferred Time <span className="text-destructive">*</span></Label>
                     <Input
                       id="time"
                       type="time"
                       value={time}
                       onChange={(e) => setTime(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Service Address <span className="text-destructive">*</span></Label>
+                    <Textarea
+                      id="address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="Enter the full address where the service will be performed..."
+                      rows={2}
+                      required
                     />
                   </div>
 

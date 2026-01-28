@@ -23,6 +23,7 @@ export type Database = {
           notes: string | null
           scheduled_date: string | null
           scheduled_time: string | null
+          service_address: string | null
           service_id: string
           status: Database["public"]["Enums"]["booking_status"]
           total_price: number | null
@@ -36,6 +37,7 @@ export type Database = {
           notes?: string | null
           scheduled_date?: string | null
           scheduled_time?: string | null
+          service_address?: string | null
           service_id: string
           status?: Database["public"]["Enums"]["booking_status"]
           total_price?: number | null
@@ -49,6 +51,7 @@ export type Database = {
           notes?: string | null
           scheduled_date?: string | null
           scheduled_time?: string | null
+          service_address?: string | null
           service_id?: string
           status?: Database["public"]["Enums"]["booking_status"]
           total_price?: number | null
