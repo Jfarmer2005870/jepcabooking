@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, forwardRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut, User, Building2 } from "lucide-react";
@@ -12,16 +12,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const Header = () => {
+const Header = forwardRef<HTMLElement>((props, ref) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, userRole, signOut, loading } = useAuth();
   const navigate = useNavigate();
 
   const navLinks = [
-    { label: "Find Services", href: "#services" },
+    { label: "Find Services", href: "/services", isRoute: true },
     { label: "For Business", href: "#business" },
     { label: "How It Works", href: "#how-it-works" },
-    { label: "Pricing", href: "#pricing" },
   ];
 
   const handleSignOut = async () => {
@@ -30,7 +29,7 @@ const Header = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 gradient-glass border-b border-border/50">
+    <header ref={ref} className="fixed top-0 left-0 right-0 z-50 gradient-glass border-b border-border/50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
@@ -42,15 +41,25 @@ const Header = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-8" aria-label="Main navigation">
             {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="text-muted-foreground hover:text-foreground transition-colors font-medium"
-              >
-                {link.label}
-              </a>
+              link.isRoute ? (
+                <Link
+                  key={link.label}
+                  to={link.href}
+                  className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  className="text-muted-foreground hover:text-foreground transition-colors font-medium"
+                >
+                  {link.label}
+                </a>
+              )
             ))}
           </nav>
 
@@ -106,7 +115,8 @@ const Header = () => {
           <button
             className="md:hidden p-2 hover:bg-secondary rounded-lg transition-colors"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMenuOpen}
           >
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -123,16 +133,27 @@ const Header = () => {
             className="md:hidden gradient-glass border-t border-border/50"
           >
             <div className="container mx-auto px-4 py-4">
-              <nav className="flex flex-col gap-2">
+              <nav className="flex flex-col gap-2" aria-label="Mobile navigation">
                 {navLinks.map((link) => (
-                  <a
-                    key={link.label}
-                    href={link.href}
-                    className="py-3 px-4 text-foreground hover:bg-secondary rounded-lg transition-colors font-medium"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {link.label}
-                  </a>
+                  link.isRoute ? (
+                    <Link
+                      key={link.label}
+                      to={link.href}
+                      className="py-3 px-4 text-foreground hover:bg-secondary rounded-lg transition-colors font-medium"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <a
+                      key={link.label}
+                      href={link.href}
+                      className="py-3 px-4 text-foreground hover:bg-secondary rounded-lg transition-colors font-medium"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {link.label}
+                    </a>
+                  )
                 ))}
                 <div className="flex flex-col gap-2 pt-4 border-t border-border">
                   {loading ? (
@@ -186,6 +207,8 @@ const Header = () => {
       </AnimatePresence>
     </header>
   );
-};
+});
+
+Header.displayName = "Header";
 
 export default Header;
