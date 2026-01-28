@@ -1,5 +1,5 @@
 import { useState, useEffect, forwardRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -69,10 +69,29 @@ interface Service {
 }
 
 const Services = forwardRef<HTMLDivElement>((_, ref) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  
+  // Get category from URL params
+  const categoryFromUrl = searchParams.get("category");
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryFromUrl);
+
+  // Sync selectedCategory when URL changes
+  useEffect(() => {
+    setSelectedCategory(categoryFromUrl);
+  }, [categoryFromUrl]);
+
+  // Update URL when category changes
+  const handleCategoryChange = (category: string | null) => {
+    setSelectedCategory(category);
+    if (category) {
+      setSearchParams({ category });
+    } else {
+      setSearchParams({});
+    }
+  };
 
   useEffect(() => {
     fetchServices();
@@ -165,7 +184,7 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
               <Button
                 variant={selectedCategory === null ? "default" : "outline"}
                 size="sm"
-                onClick={() => setSelectedCategory(null)}
+                onClick={() => handleCategoryChange(null)}
               >
                 <Filter className="w-4 h-4 mr-2" />
                 All
@@ -175,7 +194,7 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
                   key={key}
                   variant={selectedCategory === key ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setSelectedCategory(key)}
+                  onClick={() => handleCategoryChange(key)}
                   className="whitespace-nowrap"
                 >
                   {categoryIcons[key]}
