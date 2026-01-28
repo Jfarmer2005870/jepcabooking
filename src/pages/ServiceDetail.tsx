@@ -95,6 +95,8 @@ const ServiceDetail = () => {
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState("");
   const [address, setAddress] = useState("");
+  const [useHomeAddress, setUseHomeAddress] = useState(false);
+  const [homeAddress, setHomeAddress] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -103,6 +105,25 @@ const ServiceDetail = () => {
       fetchService();
     }
   }, [id]);
+
+  // Fetch user's home address
+  useEffect(() => {
+    const fetchHomeAddress = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from("profiles")
+        .select("home_address")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      
+      if (data?.home_address) {
+        setHomeAddress(data.home_address);
+      }
+    };
+    
+    fetchHomeAddress();
+  }, [user]);
 
   const fetchService = async () => {
     try {
@@ -167,7 +188,9 @@ const ServiceDetail = () => {
       return;
     }
 
-    if (!address.trim()) {
+    const serviceAddress = useHomeAddress && homeAddress ? homeAddress : address.trim();
+    
+    if (!serviceAddress) {
       toast({
         title: "Enter service address",
         description: "Please enter the address where the service will be performed.",
@@ -184,7 +207,7 @@ const ServiceDetail = () => {
         business_id: service!.business_profiles.id,
         scheduled_date: format(date, "yyyy-MM-dd"),
         scheduled_time: time,
-        service_address: address.trim(),
+        service_address: serviceAddress,
         notes: notes || null,
         total_price: service!.price_min || null,
         status: "pending",
@@ -431,15 +454,52 @@ const ServiceDetail = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="address">Service Address <span className="text-destructive">*</span></Label>
-                    <Textarea
-                      id="address"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Enter the full address where the service will be performed..."
-                      rows={2}
-                      required
-                    />
+                    <Label>Service Address <span className="text-destructive">*</span></Label>
+                    
+                    {/* Home address toggle */}
+                    {homeAddress && (
+                      <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md">
+                        <input
+                          type="checkbox"
+                          id="useHomeAddress"
+                          checked={useHomeAddress}
+                          onChange={(e) => {
+                            setUseHomeAddress(e.target.checked);
+                            if (e.target.checked) {
+                              setAddress("");
+                            }
+                          }}
+                          className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                        />
+                        <label htmlFor="useHomeAddress" className="text-sm text-foreground">
+                          Use my home address
+                        </label>
+                      </div>
+                    )}
+                    
+                    {useHomeAddress && homeAddress ? (
+                      <div className="p-3 bg-primary/5 border border-primary/20 rounded-md">
+                        <p className="text-sm text-foreground">{homeAddress}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          From your profile settings
+                        </p>
+                      </div>
+                    ) : (
+                      <Textarea
+                        id="address"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Enter the full address where the service will be performed..."
+                        rows={2}
+                        required
+                      />
+                    )}
+                    
+                    {!homeAddress && (
+                      <p className="text-xs text-muted-foreground">
+                        Tip: Save your home address in your profile for faster booking
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">

@@ -18,6 +18,7 @@ interface ProfileData {
   phone: string;
   bio: string;
   avatar_url: string;
+  home_address: string;
 }
 
 interface BusinessProfileData {
@@ -44,6 +45,7 @@ const Profile = () => {
     phone: "",
     bio: "",
     avatar_url: "",
+    home_address: "",
   });
   const [businessProfile, setBusinessProfile] = useState<BusinessProfileData>({
     business_name: "",
@@ -85,6 +87,7 @@ const Profile = () => {
             phone: profileData.phone || "",
             bio: profileData.bio || "",
             avatar_url: profileData.avatar_url || "",
+            home_address: profileData.home_address || "",
           });
         }
 
@@ -176,6 +179,7 @@ const Profile = () => {
           phone: profile.phone || null,
           bio: profile.bio || null,
           avatar_url: profile.avatar_url || null,
+          home_address: profile.home_address || null,
         })
         .eq("user_id", user.id);
 
@@ -307,6 +311,23 @@ const Profile = () => {
                   )}
                   <p className="text-xs text-muted-foreground">{profile.bio.length}/500 characters</p>
                 </div>
+
+                {/* Home Address - only for consumers */}
+                {userRole === "consumer" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="homeAddress">Home Address</Label>
+                    <Textarea
+                      id="homeAddress"
+                      value={profile.home_address}
+                      onChange={(e) => setProfile({ ...profile, home_address: e.target.value })}
+                      placeholder="Enter your home address (this will be saved for quick booking)"
+                      rows={2}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Save your home address to quickly use it when booking services
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
