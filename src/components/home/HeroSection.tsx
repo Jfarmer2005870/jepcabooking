@@ -41,7 +41,7 @@ const HeroSection = () => {
           >
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse-soft" />
             <span className="text-sm font-medium text-muted-foreground">
-              Trusted by 10,000+ businesses
+              Your local service marketplace
             </span>
           </motion.div>
 
@@ -117,32 +117,6 @@ const HeroSection = () => {
           </motion.div>
         </div>
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="max-w-4xl mx-auto mt-16 md:mt-24"
-        >
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-            {[
-              { value: "50K+", label: "Jobs Completed" },
-              { value: "2,500+", label: "Service Providers" },
-              { value: "4.9", label: "Average Rating" },
-              { value: "24/7", label: "Support" },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="text-center p-4 md:p-6 gradient-card rounded-2xl shadow-soft border border-border/50"
-              >
-                <div className="text-2xl md:text-4xl font-bold font-display text-foreground mb-1">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
       </div>
     </section>
   );
