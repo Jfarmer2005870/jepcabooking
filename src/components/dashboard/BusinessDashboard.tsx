@@ -148,12 +148,11 @@ const BusinessDashboard = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.url) {
-        setBlockedStripeUrl(null);
+        // Always keep a manual fallback link visible in case browser opens a blank tab
+        setBlockedStripeUrl(data.url);
         if (newTab && !newTab.closed) {
           newTab.location.href = data.url;
         } else {
-          // Tab was closed or blocked – show fallback link
-          setBlockedStripeUrl(data.url);
           toast({
             title: "Popup blocked",
             description: "Use the link below to open Stripe onboarding.",
@@ -347,9 +346,9 @@ const BusinessDashboard = () => {
         <Card className="border-amber-200 bg-amber-50/50">
           <CardContent className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <p className="font-medium text-foreground">Popup blocked by browser</p>
+              <p className="font-medium text-foreground">Open Stripe onboarding manually</p>
               <p className="text-sm text-muted-foreground">
-                Click below to open Stripe onboarding in a new tab.
+                If the new tab is blank or blocked, use this direct link.
               </p>
             </div>
             <Button asChild className="flex-shrink-0">
