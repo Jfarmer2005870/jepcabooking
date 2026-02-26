@@ -167,22 +167,30 @@ const BusinessDashboard = () => {
     }
   };
   const handleStripeDashboard = async () => {
+    // Open tab synchronously from click to satisfy Safari popup rules
+    const newTab = window.open("about:blank", "_blank", "noopener,noreferrer");
     setFetchingDashboardUrl(true);
+
     try {
       const { data, error } = await supabase.functions.invoke("create-stripe-login-link");
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      if (data?.url) {
+      if (!data?.url) throw new Error("No dashboard URL received");
+
+      if (newTab && !newTab.closed) {
+        newTab.location.href = data.url;
+      } else {
         await navigator.clipboard.writeText(data.url);
         toast({
-          title: "Link copied!",
-          description: "Paste it in a new Safari tab to open your Stripe Dashboard.",
+          title: "Popup blocked",
+          description: "Stripe link copied. Paste it in a new Safari tab.",
         });
       }
     } catch (e: any) {
+      newTab?.close();
       toast({
         title: "Error",
-        description: e.message || "Failed to get Stripe dashboard link",
+        description: e.message || "Failed to open Stripe dashboard",
         variant: "destructive",
       });
     } finally {
