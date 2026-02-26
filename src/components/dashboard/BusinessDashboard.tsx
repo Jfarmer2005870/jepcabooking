@@ -153,7 +153,12 @@ const BusinessDashboard = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.url) {
-        window.location.href = data.url;
+        const stripeWindow = window.open(data.url, "_blank", "noopener,noreferrer");
+
+        // Fallback for browsers that block popups
+        if (!stripeWindow) {
+          window.location.assign(data.url);
+        }
       }
     } catch (e: any) {
       toast({
