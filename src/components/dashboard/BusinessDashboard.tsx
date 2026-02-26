@@ -95,8 +95,7 @@ const BusinessDashboard = () => {
     details_submitted?: boolean;
   } | null>(null);
   const [connectingStripe, setConnectingStripe] = useState(false);
-  const [stripeDashboardUrl, setStripeDashboardUrl] = useState<string | null>(null);
-  const [fetchingDashboardUrl, setFetchingDashboardUrl] = useState(false);
+  const [openingDashboard, setOpeningDashboard] = useState(false);
   const [blockedStripeUrl, setBlockedStripeUrl] = useState<string | null>(null);
   
   useEffect(() => {
@@ -169,31 +168,25 @@ const BusinessDashboard = () => {
       setConnectingStripe(false);
     }
   };
-
-  const fetchStripeDashboardUrl = async () => {
-    if (stripeDashboardUrl || fetchingDashboardUrl) return;
-    setFetchingDashboardUrl(true);
+  const handleOpenStripeDashboard = async () => {
+    setOpeningDashboard(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-stripe-login-link");
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.url) {
-        setStripeDashboardUrl(data.url);
+        // Navigate the top-level window — works in iframes and Safari
+        window.top ? (window.top.location.href = data.url) : (window.location.href = data.url);
       }
     } catch (e: any) {
-      console.error("Failed to fetch Stripe dashboard link:", e);
-    } finally {
-      setFetchingDashboardUrl(false);
+      toast({
+        title: "Error",
+        description: e.message || "Failed to open Stripe dashboard",
+        variant: "destructive",
+      });
+      setOpeningDashboard(false);
     }
   };
-
-  // Fetch the dashboard link once Stripe is fully enabled
-  useEffect(() => {
-    if (stripeStatus?.charges_enabled) {
-      fetchStripeDashboardUrl();
-    }
-  }, [stripeStatus?.charges_enabled]);
-
   const fetchBusinessData = async () => {
     if (!user) return;
 
@@ -369,19 +362,20 @@ const BusinessDashboard = () => {
                 <span className="font-medium">Payments active</span> — You're set up to receive payments from customers.
               </p>
             </div>
-            {stripeDashboardUrl ? (
-              <Button asChild variant="outline" size="sm" className="flex-shrink-0">
-                <a href={stripeDashboardUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Stripe Dashboard
-                </a>
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" disabled className="flex-shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenStripeDashboard}
+              disabled={openingDashboard}
+              className="flex-shrink-0"
+            >
+              {openingDashboard ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Loading…
-              </Button>
-            )}
+              ) : (
+                <ExternalLink className="w-4 h-4 mr-2" />
+              )}
+              Stripe Dashboard
+            </Button>
           </CardContent>
         </Card>
       )}
