@@ -187,6 +187,23 @@ const BusinessDashboard = () => {
       setFetchingDashboardUrl(false);
     }
   };
+  const handleCopyStripeDashboardUrl = async () => {
+    if (!stripeDashboardUrl) return;
+    try {
+      await navigator.clipboard.writeText(stripeDashboardUrl);
+      toast({
+        title: "Copied",
+        description: "Stripe dashboard link copied.",
+      });
+    } catch {
+      toast({
+        title: "Copy failed",
+        description: "Please copy the link manually below.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchBusinessData = async () => {
     if (!user) return;
 
@@ -346,30 +363,51 @@ const BusinessDashboard = () => {
                 <span className="font-medium">Payments active</span> — You're set up to receive payments from customers.
               </p>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchStripeDashboardUrl}
-                disabled={fetchingDashboardUrl}
-              >
-                {fetchingDashboardUrl ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                )}
-                {stripeDashboardUrl ? "Refresh Link" : "Get Dashboard Link"}
-              </Button>
-              {stripeDashboardUrl && <p className="text-xs text-muted-foreground">If Safari fails, tap Refresh Link and open immediately.</p>}
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2 flex-wrap sm:justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchStripeDashboardUrl}
+                  disabled={fetchingDashboardUrl}
+                >
+                  {fetchingDashboardUrl ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                  )}
+                  {stripeDashboardUrl ? "Refresh Link" : "Get Dashboard Link"}
+                </Button>
 
-              {stripeDashboardUrl && (
-                <div className="flex items-center gap-2">
+                {stripeDashboardUrl && (
                   <Button asChild variant="outline" size="sm">
                     <a href={stripeDashboardUrl} target="_blank" rel="noopener noreferrer">
                       Open Stripe Dashboard
                     </a>
                   </Button>
-                </div>
+                )}
+
+                {stripeDashboardUrl && (
+                  <Button variant="outline" size="sm" onClick={handleCopyStripeDashboardUrl}>
+                    Copy Link
+                  </Button>
+                )}
+              </div>
+
+              {stripeDashboardUrl && (
+                <>
+                  <p className="text-xs text-muted-foreground">
+                    If Safari fails, tap Refresh Link and open immediately, or copy this URL.
+                  </p>
+                  <a
+                    href={stripeDashboardUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-muted-foreground underline break-all"
+                  >
+                    {stripeDashboardUrl}
+                  </a>
+                </>
               )}
             </div>
           </CardContent>
