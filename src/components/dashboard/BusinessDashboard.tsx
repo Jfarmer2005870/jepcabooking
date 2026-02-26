@@ -146,9 +146,12 @@ const BusinessDashboard = () => {
     setConnectingStripe(true);
     try {
       const headers = await getFunctionAuthHeaders();
-      // Pass top-level URL so Stripe redirects back correctly (not the iframe origin)
-      let returnUrl: string;
-      try { returnUrl = window.top?.location?.href || window.location.href; } catch { returnUrl = window.location.href; }
+      // When in iframe (preview), use the top-level preview URL for Stripe's return redirect
+      // so Safari can open it. Falls back to current location when not in iframe.
+      const isIframe = window.self !== window.top;
+      const returnUrl = isIframe
+        ? "https://id-preview--d3c284da-d79e-41f4-8e4b-df82217ff9b3.lovable.app/dashboard"
+        : window.location.href;
       const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
         body: { action: "onboard", return_url: returnUrl },
         headers,
