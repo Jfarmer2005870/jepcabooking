@@ -95,7 +95,6 @@ const BusinessDashboard = () => {
     details_submitted?: boolean;
   } | null>(null);
   const [connectingStripe, setConnectingStripe] = useState(false);
-  const [stripeDashboardUrl, setStripeDashboardUrl] = useState<string | null>(null);
   const [fetchingDashboardUrl, setFetchingDashboardUrl] = useState(false);
   
   useEffect(() => {
@@ -167,15 +166,18 @@ const BusinessDashboard = () => {
       setConnectingStripe(false);
     }
   };
-  const fetchStripeDashboardUrl = async () => {
-    if (fetchingDashboardUrl) return;
+  const handleStripeDashboard = async () => {
     setFetchingDashboardUrl(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-stripe-login-link");
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.url) {
-        setStripeDashboardUrl(data.url);
+        await navigator.clipboard.writeText(data.url);
+        toast({
+          title: "Link copied!",
+          description: "Paste it in a new Safari tab to open your Stripe Dashboard.",
+        });
       }
     } catch (e: any) {
       toast({
@@ -185,22 +187,6 @@ const BusinessDashboard = () => {
       });
     } finally {
       setFetchingDashboardUrl(false);
-    }
-  };
-  const handleCopyStripeDashboardUrl = async () => {
-    if (!stripeDashboardUrl) return;
-    try {
-      await navigator.clipboard.writeText(stripeDashboardUrl);
-      toast({
-        title: "Copied",
-        description: "Stripe dashboard link copied.",
-      });
-    } catch {
-      toast({
-        title: "Copy failed",
-        description: "Please copy the link manually below.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -363,53 +349,20 @@ const BusinessDashboard = () => {
                 <span className="font-medium">Payments active</span> — You're set up to receive payments from customers.
               </p>
             </div>
-            <div className="flex flex-col gap-2 w-full sm:w-auto">
-              <div className="flex items-center gap-2 flex-wrap sm:justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={fetchStripeDashboardUrl}
-                  disabled={fetchingDashboardUrl}
-                >
-                  {fetchingDashboardUrl ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                  )}
-                  {stripeDashboardUrl ? "Refresh Link" : "Get Dashboard Link"}
-                </Button>
-
-                {stripeDashboardUrl && (
-                  <Button asChild variant="outline" size="sm">
-                    <a href={stripeDashboardUrl} target="_blank" rel="noopener noreferrer">
-                      Open Stripe Dashboard
-                    </a>
-                  </Button>
-                )}
-
-                {stripeDashboardUrl && (
-                  <Button variant="outline" size="sm" onClick={handleCopyStripeDashboardUrl}>
-                    Copy Link
-                  </Button>
-                )}
-              </div>
-
-              {stripeDashboardUrl && (
-                <>
-                  <p className="text-xs text-muted-foreground">
-                    If Safari fails, tap Refresh Link and open immediately, or copy this URL.
-                  </p>
-                  <a
-                    href={stripeDashboardUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-muted-foreground underline break-all"
-                  >
-                    {stripeDashboardUrl}
-                  </a>
-                </>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleStripeDashboard}
+              disabled={fetchingDashboardUrl}
+              className="flex-shrink-0"
+            >
+              {fetchingDashboardUrl ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CreditCard className="w-4 h-4 mr-2" />
               )}
-            </div>
+              Stripe Dashboard
+            </Button>
           </CardContent>
         </Card>
       )}
