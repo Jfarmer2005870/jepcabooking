@@ -110,10 +110,10 @@ serve(async (req) => {
         .eq("id", profile.id);
     }
 
-    // Create onboarding link – use client-provided return_url for iframe/preview scenarios
-    const baseUrl = body.return_url
-      ? body.return_url.replace(/\/dashboard.*$/, "")
-      : req.headers.get("origin") || "http://localhost:3000";
+    // Use client-provided return_url directly (already includes /dashboard path)
+    const returnUrl = body.return_url || req.headers.get("origin") || "http://localhost:3000";
+    // Strip any path so we can build clean return/refresh URLs
+    const baseUrl = returnUrl.replace(/\/dashboard.*$/, "").replace(/\/$/, "");
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       refresh_url: `${baseUrl}/dashboard`,
