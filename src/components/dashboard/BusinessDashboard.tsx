@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +17,10 @@ import {
   Loader2,
   Phone,
   Mail,
-  MapPin
+  MapPin,
+  CreditCard,
+  ExternalLink,
+  AlertCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AddServiceDialog from "./AddServiceDialog";
@@ -78,18 +81,69 @@ const statusLabels: Record<string, string> = {
 const BusinessDashboard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [businessProfile, setBusinessProfile] = useState<BusinessProfile | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState<string | null>(null);
+  const [stripeStatus, setStripeStatus] = useState<{
+    connected: boolean;
+    charges_enabled?: boolean;
+    payouts_enabled?: boolean;
+    details_submitted?: boolean;
+  } | null>(null);
+  const [connectingStripe, setConnectingStripe] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchBusinessData();
+      checkStripeStatus();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (searchParams.get("stripe_connected") === "true") {
+      checkStripeStatus();
+      toast({ title: "Stripe connected!", description: "Your payment account has been set up." });
+    }
+  }, [searchParams]);
+
+  const checkStripeStatus = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
+        body: { action: "status" },
+      });
+      if (!error && data) {
+        setStripeStatus(data);
+      }
+    } catch (e) {
+      console.error("Error checking Stripe status:", e);
+    }
+  };
+
+  const handleConnectStripe = async () => {
+    setConnectingStripe(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
+        body: { action: "onboard" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (e: any) {
+      toast({
+        title: "Error",
+        description: e.message || "Failed to start Stripe setup",
+        variant: "destructive",
+      });
+    } finally {
+      setConnectingStripe(false);
+    }
+  };
 
   const fetchBusinessData = async () => {
     if (!user) return;
@@ -212,6 +266,43 @@ const BusinessDashboard = () => {
           Add Service
         </Button>
       </div>
+
+      {/* Stripe Connect Status */}
+      {stripeStatus && !stripeStatus.charges_enabled && (
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardContent className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-foreground">Set up payments to receive bookings</p>
+                <p className="text-sm text-muted-foreground">
+                  Connect your Stripe account so customers can pay you directly. You'll receive payments minus a 5% platform fee.
+                </p>
+              </div>
+            </div>
+            <Button onClick={handleConnectStripe} disabled={connectingStripe} className="flex-shrink-0">
+              {connectingStripe ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <CreditCard className="w-4 h-4 mr-2" />
+              )}
+              {stripeStatus.connected ? "Complete Setup" : "Connect Stripe"}
+              <ExternalLink className="w-3 h-3 ml-1" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {stripeStatus?.charges_enabled && (
+        <Card className="border-green-200 bg-green-50/50">
+          <CardContent className="py-3 flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <p className="text-sm text-foreground">
+              <span className="font-medium">Payments active</span> — You're set up to receive payments from customers.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-4">

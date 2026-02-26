@@ -201,31 +201,27 @@ const ServiceDetail = () => {
 
     setBooking(true);
     try {
-      const { error } = await supabase.from("bookings").insert({
-        service_id: service!.id,
-        consumer_id: user.id,
-        business_id: service!.business_profiles.id,
-        scheduled_date: format(date, "yyyy-MM-dd"),
-        scheduled_time: time,
-        service_address: serviceAddress,
-        notes: notes || null,
-        total_price: service!.price_min || null,
-        status: "pending",
+      const { data, error } = await supabase.functions.invoke("create-booking-checkout", {
+        body: {
+          service_id: service!.id,
+          scheduled_date: format(date, "yyyy-MM-dd"),
+          scheduled_time: time,
+          service_address: serviceAddress,
+          notes: notes || null,
+        },
       });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
-      toast({
-        title: "Booking requested!",
-        description: "The service provider will review your request shortly.",
-      });
-
-      navigate("/dashboard");
-    } catch (error) {
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error: any) {
       console.error("Error creating booking:", error);
       toast({
         title: "Error",
-        description: "Failed to create booking. Please try again.",
+        description: error.message || "Failed to create booking. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -513,6 +509,24 @@ const ServiceDetail = () => {
                     />
                   </div>
 
+                  {/* Price breakdown */}
+                  {service.price_min && (
+                    <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Service price</span>
+                        <span className="text-foreground">${service.price_min.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Platform fee (5%)</span>
+                        <span className="text-foreground">${(service.price_min * 0.05).toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between font-semibold border-t border-border pt-1">
+                        <span className="text-foreground">Total</span>
+                        <span className="text-primary">${(service.price_min * 1.05).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
+
                   <Button
                     className="w-full"
                     size="lg"
@@ -522,17 +536,17 @@ const ServiceDetail = () => {
                     {booking ? (
                       <>
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Submitting...
+                        Processing...
                       </>
                     ) : user ? (
-                      "Request Booking"
+                      "Book & Pay Now"
                     ) : (
                       "Sign in to Book"
                     )}
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground">
-                    You won't be charged until the provider confirms
+                    Secure payment processed via Stripe
                   </p>
                 </CardContent>
               </Card>

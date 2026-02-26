@@ -21,6 +21,8 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          payment_intent_id: string | null
+          platform_fee: number | null
           scheduled_date: string | null
           scheduled_time: string | null
           service_address: string | null
@@ -35,6 +37,8 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          payment_intent_id?: string | null
+          platform_fee?: number | null
           scheduled_date?: string | null
           scheduled_time?: string | null
           service_address?: string | null
@@ -49,6 +53,8 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          payment_intent_id?: string | null
+          platform_fee?: number | null
           scheduled_date?: string | null
           scheduled_time?: string | null
           service_address?: string | null
@@ -87,6 +93,7 @@ export type Database = {
           rating: number | null
           service_area: string | null
           state: string | null
+          stripe_account_id: string | null
           total_reviews: number | null
           updated_at: string
           user_id: string
@@ -105,6 +112,7 @@ export type Database = {
           rating?: number | null
           service_area?: string | null
           state?: string | null
+          stripe_account_id?: string | null
           total_reviews?: number | null
           updated_at?: string
           user_id: string
@@ -123,6 +131,7 @@ export type Database = {
           rating?: number | null
           service_area?: string | null
           state?: string | null
+          stripe_account_id?: string | null
           total_reviews?: number | null
           updated_at?: string
           user_id?: string
