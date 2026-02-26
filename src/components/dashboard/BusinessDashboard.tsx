@@ -97,7 +97,7 @@ const BusinessDashboard = () => {
   const [connectingStripe, setConnectingStripe] = useState(false);
   const [openingDashboard, setOpeningDashboard] = useState(false);
   const [blockedStripeUrl, setBlockedStripeUrl] = useState<string | null>(null);
-  const [blockedDashboardUrl, setBlockedDashboardUrl] = useState<string | null>(null);
+  
   useEffect(() => {
     if (user) {
       fetchBusinessData();
@@ -171,36 +171,21 @@ const BusinessDashboard = () => {
 
   const handleOpenStripeDashboard = async () => {
     setOpeningDashboard(true);
-    const newTab = window.open("about:blank", "_blank");
-
     try {
       const { data, error } = await supabase.functions.invoke("create-stripe-login-link");
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
       if (data?.url) {
-        setBlockedDashboardUrl(data.url);
-
-        if (newTab && !newTab.closed) {
-          newTab.location.href = data.url;
-        } else {
-          toast({
-            title: "Popup blocked",
-            description: "Use the link below to open Stripe Dashboard.",
-            variant: "destructive",
-          });
-        }
-      } else {
-        newTab?.close();
+        // Navigate the current page directly — avoids all popup blockers
+        window.location.href = data.url;
       }
     } catch (e: any) {
-      newTab?.close();
       toast({
         title: "Error",
         description: e.message || "Failed to open Stripe dashboard",
         variant: "destructive",
       });
-    } finally {
       setOpeningDashboard(false);
     }
   };
@@ -399,23 +384,6 @@ const BusinessDashboard = () => {
       )}
 
 
-      {blockedDashboardUrl && stripeStatus?.charges_enabled && (
-        <Card className="border-amber-200 bg-amber-50/50">
-          <CardContent className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <p className="font-medium text-foreground">Open Stripe Dashboard manually</p>
-              <p className="text-sm text-muted-foreground">
-                If the new tab was blocked, use this direct link.
-              </p>
-            </div>
-            <Button asChild className="flex-shrink-0" variant="outline">
-              <a href={blockedDashboardUrl} target="_blank" rel="noopener noreferrer">
-                Open Stripe Dashboard
-              </a>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-4">
