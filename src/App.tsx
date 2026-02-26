@@ -12,6 +12,7 @@ import Profile from "./pages/Profile";
 import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
 import NotFound from "./pages/NotFound";
+import Terms from "./pages/Terms";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/services" element={<Services />} />
               <Route path="/services/:id" element={<ServiceDetail />} />
+              <Route path="/terms" element={<Terms />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
