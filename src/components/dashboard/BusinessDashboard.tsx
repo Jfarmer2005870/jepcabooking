@@ -168,7 +168,7 @@ const BusinessDashboard = () => {
     }
   };
   const fetchStripeDashboardUrl = async () => {
-    if (stripeDashboardUrl || fetchingDashboardUrl) return;
+    if (fetchingDashboardUrl) return;
     setFetchingDashboardUrl(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-stripe-login-link");
@@ -346,29 +346,32 @@ const BusinessDashboard = () => {
                 <span className="font-medium">Payments active</span> — You're set up to receive payments from customers.
               </p>
             </div>
-            {stripeDashboardUrl ? (
-              <Button asChild variant="outline" size="sm" className="flex-shrink-0">
-                <a href={stripeDashboardUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open Stripe Dashboard
-                </a>
-              </Button>
-            ) : (
+            <div className="flex items-center gap-2 flex-shrink-0">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={fetchStripeDashboardUrl}
                 disabled={fetchingDashboardUrl}
-                className="flex-shrink-0"
               >
                 {fetchingDashboardUrl ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <ExternalLink className="w-4 h-4 mr-2" />
                 )}
-                Get Dashboard Link
+                {stripeDashboardUrl ? "Refresh Link" : "Get Dashboard Link"}
               </Button>
-            )}
+              {stripeDashboardUrl && <p className="text-xs text-muted-foreground">If Safari fails, tap Refresh Link and open immediately.</p>}
+
+              {stripeDashboardUrl && (
+                <div className="flex items-center gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <a href={stripeDashboardUrl}>
+                      Open Stripe Dashboard
+                    </a>
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
