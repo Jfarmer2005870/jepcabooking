@@ -146,8 +146,11 @@ const BusinessDashboard = () => {
     setConnectingStripe(true);
     try {
       const headers = await getFunctionAuthHeaders();
+      // Pass top-level URL so Stripe redirects back correctly (not the iframe origin)
+      let returnUrl: string;
+      try { returnUrl = window.top?.location?.href || window.location.href; } catch { returnUrl = window.location.href; }
       const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
-        body: { action: "onboard" },
+        body: { action: "onboard", return_url: returnUrl },
         headers,
       });
       if (error) throw error;

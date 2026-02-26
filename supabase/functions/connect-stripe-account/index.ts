@@ -63,7 +63,8 @@ serve(async (req) => {
 
     if (profileError || !profile) throw new Error("Business profile not found");
 
-    const { action } = await req.json();
+    const body = await req.json();
+    const { action } = body;
 
     if (action === "status") {
       // Check if they have a connected account and its status
@@ -109,12 +110,14 @@ serve(async (req) => {
         .eq("id", profile.id);
     }
 
-    // Create onboarding link
-    const origin = req.headers.get("origin") || "http://localhost:3000";
+    // Create onboarding link – use client-provided return_url for iframe/preview scenarios
+    const baseUrl = body.return_url
+      ? body.return_url.replace(/\/dashboard.*$/, "")
+      : req.headers.get("origin") || "http://localhost:3000";
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${origin}/dashboard`,
-      return_url: `${origin}/dashboard?stripe_connected=true`,
+      refresh_url: `${baseUrl}/dashboard`,
+      return_url: `${baseUrl}/dashboard?stripe_connected=true`,
       type: "account_onboarding",
     });
 
