@@ -18,17 +18,34 @@ serve(async (req) => {
     });
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Not authenticated");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
 
-    // User client for auth validation
+    const token = authHeader.replace("Bearer ", "");
+
+    // User client for JWT validation
     const userClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
+      {
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false },
+      }
     );
 
-    const { data: userData, error: userError } = await userClient.auth.getUser();
-    if (userError || !userData.user) throw new Error("Not authenticated");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    const userId = claimsData?.claims?.sub;
+
+    if (claimsError || !userId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
+    }
 
     // Admin client for DB mutations
     const supabaseClient = createClient(
@@ -36,13 +53,12 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
-    const user = userData.user;
 
     // Get business profile
     const { data: profile, error: profileError } = await supabaseClient
       .from("business_profiles")
       .select("id, stripe_account_id, business_name")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .maybeSingle();
 
     if (profileError || !profile) throw new Error("Business profile not found");
@@ -74,7 +90,8 @@ serve(async (req) => {
     if (!accountId) {
       const account = await stripe.accounts.create({
         type: "express",
-        email: user.email,
+        business_type: "individual",
+        email: claimsData?.claims?.email as string | undefined,
         business_profile: {
           name: profile.business_name,
         },
