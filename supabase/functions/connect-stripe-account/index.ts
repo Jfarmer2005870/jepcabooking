@@ -25,9 +25,7 @@ serve(async (req) => {
       });
     }
 
-    const token = authHeader.replace("Bearer ", "");
-
-    // User client for JWT validation
+    // User client for auth validation
     const userClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
@@ -37,10 +35,11 @@ serve(async (req) => {
       }
     );
 
-    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-    const userId = claimsData?.claims?.sub;
+    const { data: userData, error: userError } = await userClient.auth.getUser();
+    const userId = userData?.user?.id;
+    const userEmail = userData?.user?.email;
 
-    if (claimsError || !userId) {
+    if (userError || !userId) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 401,
@@ -92,7 +91,7 @@ serve(async (req) => {
       const account = await stripe.accounts.create({
         type: "express",
         business_type: "individual",
-        email: claimsData?.claims?.email as string | undefined,
+        email: userEmail,
         business_profile: {
           name: profile.business_name,
         },

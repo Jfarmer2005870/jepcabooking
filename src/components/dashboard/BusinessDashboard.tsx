@@ -111,25 +111,10 @@ const BusinessDashboard = () => {
     }
   }, [searchParams]);
 
-  const getFunctionAuthHeaders = async () => {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-
-    if (!token) {
-      throw new Error("You need to sign in again to continue.");
-    }
-
-    return {
-      Authorization: `Bearer ${token}`,
-    };
-  };
-
   const checkStripeStatus = async () => {
     try {
-      const headers = await getFunctionAuthHeaders();
       const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
         body: { action: "status" },
-        headers,
       });
 
       if (error) throw error;
@@ -147,7 +132,6 @@ const BusinessDashboard = () => {
     // Open a blank tab synchronously (within the click handler) to avoid popup blockers
     const newTab = window.open("about:blank", "_blank");
     try {
-      const headers = await getFunctionAuthHeaders();
       // Build return URL – use the preview top-level URL when inside an iframe
       let returnUrl: string;
       try {
@@ -158,7 +142,6 @@ const BusinessDashboard = () => {
       }
       const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
         body: { action: "onboard", return_url: returnUrl },
-        headers,
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -193,8 +176,7 @@ const BusinessDashboard = () => {
   const handleOpenStripeDashboard = async () => {
     setOpeningDashboard(true);
     try {
-      const headers = await getFunctionAuthHeaders();
-      const { data, error } = await supabase.functions.invoke("create-stripe-login-link", { headers });
+      const { data, error } = await supabase.functions.invoke("create-stripe-login-link");
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.url) {
