@@ -96,7 +96,7 @@ const BusinessDashboard = () => {
   } | null>(null);
   const [connectingStripe, setConnectingStripe] = useState(false);
   const [openingDashboard, setOpeningDashboard] = useState(false);
-
+  const [blockedStripeUrl, setBlockedStripeUrl] = useState<string | null>(null);
   useEffect(() => {
     if (user) {
       fetchBusinessData();
@@ -153,6 +153,7 @@ const BusinessDashboard = () => {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.url) {
+        setBlockedStripeUrl(null);
         const stripeWindow = window.open(data.url, "_blank", "noopener,noreferrer");
 
         // In preview (iframe), same-tab redirect to Stripe causes a blank page.
@@ -160,9 +161,10 @@ const BusinessDashboard = () => {
           if (window.self === window.top) {
             window.location.assign(data.url);
           } else {
+            setBlockedStripeUrl(data.url);
             toast({
               title: "Popup blocked",
-              description: "Please allow popups and click again to open Stripe onboarding.",
+              description: "Use the 'Open Stripe Onboarding' link below, or allow popups and try again.",
               variant: "destructive",
             });
           }
@@ -343,6 +345,24 @@ const BusinessDashboard = () => {
               )}
               {stripeStatus.connected ? "Complete Setup" : "Connect Stripe"}
               <ExternalLink className="w-3 h-3 ml-1" />
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {blockedStripeUrl && (
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardContent className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <p className="font-medium text-foreground">Popup blocked by browser</p>
+              <p className="text-sm text-muted-foreground">
+                Click below to open Stripe onboarding in a new tab.
+              </p>
+            </div>
+            <Button asChild className="flex-shrink-0">
+              <a href={blockedStripeUrl} target="_blank" rel="noopener noreferrer">
+                Open Stripe Onboarding
+              </a>
             </Button>
           </CardContent>
         </Card>
