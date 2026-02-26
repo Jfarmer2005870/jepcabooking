@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +17,11 @@ type UserType = "consumer" | "business";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { signIn, signUp, user, loading } = useAuth();
+  const requestedRedirect = searchParams.get("redirect");
+  const redirectPath = requestedRedirect?.startsWith("/") ? requestedRedirect : "/dashboard";
 
   const [mode, setMode] = useState<AuthMode>("login");
   const [userType, setUserType] = useState<UserType | null>(null);
@@ -33,9 +36,9 @@ const Auth = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (user && !loading) {
-      navigate("/dashboard");
+      navigate(redirectPath);
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, redirectPath]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -98,7 +101,7 @@ const Auth = () => {
             title: "Welcome back!",
             description: "You have successfully logged in.",
           });
-          navigate("/dashboard");
+          navigate(redirectPath);
         }
       } else {
         if (!userType) {
@@ -137,7 +140,7 @@ const Auth = () => {
             title: "Account created!",
             description: "Welcome to Jepca. Your account is ready.",
           });
-          navigate("/dashboard");
+          navigate(redirectPath);
         }
       }
     } catch (error) {

@@ -12,7 +12,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!loading && !user) {
-      navigate("/auth");
+      navigate(`/auth?redirect=${encodeURIComponent("/dashboard")}`);
     }
   }, [user, loading, navigate]);
 

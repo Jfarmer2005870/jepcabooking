@@ -134,14 +134,8 @@ const BusinessDashboard = () => {
     // Open a blank tab synchronously (within the click handler) to avoid popup blockers
     const newTab = window.open("about:blank", "_blank");
     try {
-      // Build return URL – avoid editor host in iframe mode
-      let returnUrl: string;
-      const isIframe = window.self !== window.top;
-      if (isIframe) {
-        returnUrl = "https://id-preview--d3c284da-d79e-41f4-8e4b-df82217ff9b3.lovable.app/dashboard";
-      } else {
-        returnUrl = window.location.href;
-      }
+      // Always use the current app origin so Stripe can return to the correct environment
+      const returnUrl = new URL("/dashboard", window.location.origin).toString();
       const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
         body: { action: "onboard", return_url: returnUrl },
       });
