@@ -174,11 +174,14 @@ const BusinessDashboard = () => {
       if (data?.error) throw new Error(data.error);
       if (!data?.url) throw new Error("No dashboard URL received");
 
-      await navigator.clipboard.writeText(data.url);
-      toast({
-        title: "✅ Stripe link copied!",
-        description: "Open a new tab and paste to access your Stripe Dashboard.",
-      });
+      const opened = window.open(data.url, "_blank", "noopener,noreferrer");
+      if (!opened) {
+        await navigator.clipboard.writeText(data.url);
+        toast({
+          title: "Popup blocked",
+          description: "Stripe link copied to clipboard — paste it in a new tab.",
+        });
+      }
     } catch (e: any) {
       toast({
         title: "Error",
