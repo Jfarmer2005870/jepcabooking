@@ -95,6 +95,7 @@ const BusinessDashboard = () => {
     details_submitted?: boolean;
   } | null>(null);
   const [connectingStripe, setConnectingStripe] = useState(false);
+  const [openingDashboard, setOpeningDashboard] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -142,6 +143,26 @@ const BusinessDashboard = () => {
       });
     } finally {
       setConnectingStripe(false);
+    }
+  };
+
+  const handleOpenStripeDashboard = async () => {
+    setOpeningDashboard(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-stripe-login-link");
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (e: any) {
+      toast({
+        title: "Error",
+        description: e.message || "Failed to open Stripe dashboard",
+        variant: "destructive",
+      });
+    } finally {
+      setOpeningDashboard(false);
     }
   };
 
@@ -295,11 +316,27 @@ const BusinessDashboard = () => {
 
       {stripeStatus?.charges_enabled && (
         <Card className="border-green-200 bg-green-50/50">
-          <CardContent className="py-3 flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600" />
-            <p className="text-sm text-foreground">
-              <span className="font-medium">Payments active</span> — You're set up to receive payments from customers.
-            </p>
+          <CardContent className="py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+              <p className="text-sm text-foreground">
+                <span className="font-medium">Payments active</span> — You're set up to receive payments from customers.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenStripeDashboard}
+              disabled={openingDashboard}
+              className="flex-shrink-0"
+            >
+              {openingDashboard ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <ExternalLink className="w-4 h-4 mr-2" />
+              )}
+              Stripe Dashboard
+            </Button>
           </CardContent>
         </Card>
       )}
