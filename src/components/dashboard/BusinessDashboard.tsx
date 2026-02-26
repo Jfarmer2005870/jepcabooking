@@ -95,8 +95,8 @@ const BusinessDashboard = () => {
     details_submitted?: boolean;
   } | null>(null);
   const [connectingStripe, setConnectingStripe] = useState(false);
-  const [openingDashboard, setOpeningDashboard] = useState(false);
-  const [blockedStripeUrl, setBlockedStripeUrl] = useState<string | null>(null);
+  const [stripeDashboardUrl, setStripeDashboardUrl] = useState<string | null>(null);
+  const [fetchingDashboardUrl, setFetchingDashboardUrl] = useState(false);
   
   useEffect(() => {
     if (user) {
@@ -144,7 +144,6 @@ const BusinessDashboard = () => {
       if (data?.error) throw new Error(data.error);
       if (data?.url) {
         // Always keep a manual fallback link visible in case browser opens a blank tab
-        setBlockedStripeUrl(data.url);
         if (newTab && !newTab.closed) {
           newTab.location.href = data.url;
         } else {
@@ -168,23 +167,24 @@ const BusinessDashboard = () => {
       setConnectingStripe(false);
     }
   };
-  const handleOpenStripeDashboard = async () => {
-    setOpeningDashboard(true);
+  const fetchStripeDashboardUrl = async () => {
+    if (stripeDashboardUrl || fetchingDashboardUrl) return;
+    setFetchingDashboardUrl(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-stripe-login-link");
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.url) {
-        // Navigate the top-level window — works in iframes and Safari
-        window.top ? (window.top.location.href = data.url) : (window.location.href = data.url);
+        setStripeDashboardUrl(data.url);
       }
     } catch (e: any) {
       toast({
         title: "Error",
-        description: e.message || "Failed to open Stripe dashboard",
+        description: e.message || "Failed to get Stripe dashboard link",
         variant: "destructive",
       });
-      setOpeningDashboard(false);
+    } finally {
+      setFetchingDashboardUrl(false);
     }
   };
   const fetchBusinessData = async () => {
@@ -335,23 +335,7 @@ const BusinessDashboard = () => {
         </Card>
       )}
 
-      {blockedStripeUrl && (
-        <Card className="border-amber-200 bg-amber-50/50">
-          <CardContent className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <p className="font-medium text-foreground">Open Stripe onboarding manually</p>
-              <p className="text-sm text-muted-foreground">
-                If the new tab is blank or blocked, use this direct link.
-              </p>
-            </div>
-            <Button asChild className="flex-shrink-0">
-              <a href={blockedStripeUrl} target="_blank" rel="noopener noreferrer">
-                Open Stripe Onboarding
-              </a>
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      
 
       {stripeStatus?.charges_enabled && (
         <Card className="border-green-200 bg-green-50/50">
@@ -362,20 +346,29 @@ const BusinessDashboard = () => {
                 <span className="font-medium">Payments active</span> — You're set up to receive payments from customers.
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleOpenStripeDashboard}
-              disabled={openingDashboard}
-              className="flex-shrink-0"
-            >
-              {openingDashboard ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <ExternalLink className="w-4 h-4 mr-2" />
-              )}
-              Stripe Dashboard
-            </Button>
+            {stripeDashboardUrl ? (
+              <Button asChild variant="outline" size="sm" className="flex-shrink-0">
+                <a href={stripeDashboardUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open Stripe Dashboard
+                </a>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchStripeDashboardUrl}
+                disabled={fetchingDashboardUrl}
+                className="flex-shrink-0"
+              >
+                {fetchingDashboardUrl ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                )}
+                Get Dashboard Link
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
