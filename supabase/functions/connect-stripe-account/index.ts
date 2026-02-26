@@ -17,16 +17,25 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Not authenticated");
+
+    // User client for auth validation
+    const userClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: userData, error: userError } = await userClient.auth.getUser();
+    if (userError || !userData.user) throw new Error("Not authenticated");
+
+    // Admin client for DB mutations
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
-
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError || !userData.user) throw new Error("Not authenticated");
     const user = userData.user;
 
     // Get business profile
