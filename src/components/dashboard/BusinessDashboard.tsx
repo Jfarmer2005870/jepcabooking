@@ -144,14 +144,18 @@ const BusinessDashboard = () => {
 
   const handleConnectStripe = async () => {
     setConnectingStripe(true);
+    // Open a blank tab synchronously (within the click handler) to avoid popup blockers
+    const newTab = window.open("about:blank", "_blank");
     try {
       const headers = await getFunctionAuthHeaders();
-      // When in iframe (preview), use the top-level preview URL for Stripe's return redirect
-      // so Safari can open it. Falls back to current location when not in iframe.
-      const isIframe = window.self !== window.top;
-      const returnUrl = isIframe
-        ? "https://id-preview--d3c284da-d79e-41f4-8e4b-df82217ff9b3.lovable.app/dashboard"
-        : window.location.href;
+      // Build return URL – use the preview top-level URL when inside an iframe
+      let returnUrl: string;
+      try {
+        returnUrl = window.top?.location?.href || window.location.href;
+      } catch {
+        // Cross-origin iframe – use known preview URL
+        returnUrl = `${window.location.origin}/dashboard`;
+      }
       const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
         body: { action: "onboard", return_url: returnUrl },
         headers,
@@ -160,23 +164,22 @@ const BusinessDashboard = () => {
       if (data?.error) throw new Error(data.error);
       if (data?.url) {
         setBlockedStripeUrl(null);
-        const stripeWindow = window.open(data.url, "_blank", "noopener,noreferrer");
-
-        // In preview (iframe), same-tab redirect to Stripe causes a blank page.
-        if (!stripeWindow) {
-          if (window.self === window.top) {
-            window.location.assign(data.url);
-          } else {
-            setBlockedStripeUrl(data.url);
-            toast({
-              title: "Popup blocked",
-              description: "Use the 'Open Stripe Onboarding' link below, or allow popups and try again.",
-              variant: "destructive",
-            });
-          }
+        if (newTab && !newTab.closed) {
+          newTab.location.href = data.url;
+        } else {
+          // Tab was closed or blocked – show fallback link
+          setBlockedStripeUrl(data.url);
+          toast({
+            title: "Popup blocked",
+            description: "Use the link below to open Stripe onboarding.",
+            variant: "destructive",
+          });
         }
+      } else {
+        newTab?.close();
       }
     } catch (e: any) {
+      newTab?.close();
       toast({
         title: "Error",
         description: e.message || "Failed to start Stripe setup",
