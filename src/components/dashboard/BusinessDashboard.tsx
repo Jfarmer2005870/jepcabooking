@@ -124,6 +124,8 @@ const BusinessDashboard = () => {
       }
     } catch (e) {
       console.error("Error checking Stripe status:", e);
+      // Keep setup UI available even if status fetch fails
+      setStripeStatus({ connected: false, charges_enabled: false, payouts_enabled: false, details_submitted: false });
     }
   };
 
@@ -132,13 +134,12 @@ const BusinessDashboard = () => {
     // Open a blank tab synchronously (within the click handler) to avoid popup blockers
     const newTab = window.open("about:blank", "_blank");
     try {
-      // Build return URL – use the preview top-level URL when inside an iframe
+      // Build return URL – use top window when possible, else referrer (preview URL)
       let returnUrl: string;
       try {
         returnUrl = window.top?.location?.href || window.location.href;
       } catch {
-        // Cross-origin iframe – use known preview URL
-        returnUrl = `${window.location.origin}/dashboard`;
+        returnUrl = document.referrer || `${window.location.origin}/dashboard`;
       }
       const { data, error } = await supabase.functions.invoke("connect-stripe-account", {
         body: { action: "onboard", return_url: returnUrl },
