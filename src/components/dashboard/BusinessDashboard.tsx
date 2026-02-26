@@ -365,7 +365,7 @@ const BusinessDashboard = () => {
               {stripeDashboardUrl && (
                 <div className="flex items-center gap-2">
                   <Button asChild variant="outline" size="sm">
-                    <a href={stripeDashboardUrl}>
+                    <a href={stripeDashboardUrl} target="_blank" rel="noopener noreferrer">
                       Open Stripe Dashboard
                     </a>
                   </Button>
