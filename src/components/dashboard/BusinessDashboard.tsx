@@ -155,9 +155,17 @@ const BusinessDashboard = () => {
       if (data?.url) {
         const stripeWindow = window.open(data.url, "_blank", "noopener,noreferrer");
 
-        // Fallback for browsers that block popups
+        // In preview (iframe), same-tab redirect to Stripe causes a blank page.
         if (!stripeWindow) {
-          window.location.assign(data.url);
+          if (window.self === window.top) {
+            window.location.assign(data.url);
+          } else {
+            toast({
+              title: "Popup blocked",
+              description: "Please allow popups and click again to open Stripe onboarding.",
+              variant: "destructive",
+            });
+          }
         }
       }
     } catch (e: any) {
