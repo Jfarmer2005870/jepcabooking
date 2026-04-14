@@ -38,7 +38,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const { service_id, scheduled_date, scheduled_time, service_address, notes } = await req.json();
+    const { service_id, scheduled_date, scheduled_time, service_address, notes, estimated_hours } = await req.json();
 
     if (!service_id) throw new Error("Service ID is required");
 
@@ -56,8 +56,17 @@ serve(async (req) => {
       throw new Error("This service provider has not set up payments yet. Please contact them directly.");
     }
 
-    // Calculate prices (in cents)
-    const servicePrice = service.price_min || 0;
+    // Calculate prices based on pricing type (in cents)
+    const baseRate = service.price_min || 0;
+    let servicePrice: number;
+
+    if (service.price_type === "hourly") {
+      const hours = estimated_hours || 1;
+      servicePrice = baseRate * hours;
+    } else {
+      servicePrice = baseRate;
+    }
+
     const servicePriceCents = Math.round(servicePrice * 100);
     const platformFeeCents = Math.round(servicePriceCents * PLATFORM_FEE_PERCENT / 100);
     const totalCents = servicePriceCents + platformFeeCents;
