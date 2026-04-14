@@ -209,6 +209,7 @@ const ServiceDetail = () => {
           scheduled_time: time,
           service_address: serviceAddress,
           notes: notes || null,
+          estimated_hours: service!.price_type === "hourly" ? estimatedHours : null,
         },
       });
 
@@ -500,6 +501,25 @@ const ServiceDetail = () => {
                     )}
                   </div>
 
+                  {/* Estimated Hours (for hourly services) */}
+                  {service.price_type === "hourly" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="hours">Estimated Hours <span className="text-destructive">*</span></Label>
+                      <Input
+                        id="hours"
+                        type="number"
+                        min={1}
+                        max={24}
+                        step={0.5}
+                        value={estimatedHours}
+                        onChange={(e) => setEstimatedHours(Math.max(0.5, parseFloat(e.target.value) || 1))}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        How many hours do you estimate the job will take?
+                      </p>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <Label htmlFor="notes">Additional Notes (optional)</Label>
                     <Textarea
@@ -514,18 +534,45 @@ const ServiceDetail = () => {
                   {/* Price breakdown */}
                   {service.price_min && (
                     <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Service price</span>
-                        <span className="text-foreground">${service.price_min.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Platform fee (5%)</span>
-                        <span className="text-foreground">${(service.price_min * 0.05).toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between font-semibold border-t border-border pt-1">
-                        <span className="text-foreground">Total</span>
-                        <span className="text-primary">${(service.price_min * 1.05).toFixed(2)}</span>
-                      </div>
+                      {service.price_type === "hourly" ? (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Hourly rate</span>
+                            <span className="text-foreground">${service.price_min.toFixed(2)}/hr</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Estimated hours</span>
+                            <span className="text-foreground">{estimatedHours} hr{estimatedHours !== 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Subtotal</span>
+                            <span className="text-foreground">${(service.price_min * estimatedHours).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Platform fee (5%)</span>
+                            <span className="text-foreground">${(service.price_min * estimatedHours * 0.05).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between font-semibold border-t border-border pt-1">
+                            <span className="text-foreground">Total</span>
+                            <span className="text-primary">${(service.price_min * estimatedHours * 1.05).toFixed(2)}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Service price</span>
+                            <span className="text-foreground">${service.price_min.toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Platform fee (5%)</span>
+                            <span className="text-foreground">${(service.price_min * 0.05).toFixed(2)}</span>
+                          </div>
+                          <div className="flex justify-between font-semibold border-t border-border pt-1">
+                            <span className="text-foreground">Total</span>
+                            <span className="text-primary">${(service.price_min * 1.05).toFixed(2)}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 
