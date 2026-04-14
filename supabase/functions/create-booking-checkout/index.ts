@@ -110,7 +110,9 @@ serve(async (req) => {
             currency: "usd",
             product_data: {
               name: service.title,
-              description: `Service by ${businessProfile.business_name}`,
+              description: service.price_type === "hourly"
+                ? `${estimated_hours || 1} hour(s) @ $${baseRate}/hr — Service by ${businessProfile.business_name}`
+                : `Service by ${businessProfile.business_name}`,
             },
             unit_amount: totalCents,
           },
