@@ -22,8 +22,8 @@ const Footer = forwardRef<HTMLElement>((props, ref) => {
     ],
     legal: [
       { label: "Terms of Service", href: "/terms", isRoute: true },
-      { label: "Privacy Policy", href: "#" },
-      { label: "Cookie Policy", href: "#" },
+      { label: "Privacy Policy", href: "/privacy", isRoute: true },
+      { label: "Cookie Policy", href: "/cookies", isRoute: true },
     ],
   };
 
