@@ -234,8 +234,9 @@ const ServiceDetail = () => {
     if (!service.price_min && !service.price_max) return "Get Quote";
     if (service.price_type === "quote") return "Get Quote";
     
-    const min = service.price_min ? `$${service.price_min}` : "";
-    const max = service.price_max ? `$${service.price_max}` : "";
+    const fee = 1.05; // 5% platform fee
+    const min = service.price_min ? `$${(service.price_min * fee).toFixed(2)}` : "";
+    const max = service.price_max ? `$${(service.price_max * fee).toFixed(2)}` : "";
     const type = service.price_type === "hourly" ? "/hr" : "";
     
     if (min && max && min !== max) return `${min} - ${max}${type}`;
