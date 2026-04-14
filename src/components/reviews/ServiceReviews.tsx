@@ -44,17 +44,25 @@ const ServiceReviews = ({ businessId }: ServiceReviewsProps) => {
 
       if (error) throw error;
 
-      // Fetch profile names for each review
-      const reviewsWithNames = await Promise.all(
-        (data || []).map(async (review) => {
-          const { data: profile } = await supabase
+      const reviewData = data || [];
+      
+      // Batch fetch all profiles at once instead of N+1
+      const consumerIds = [...new Set(reviewData.map((r) => r.consumer_id))];
+      const { data: profiles } = consumerIds.length > 0
+        ? await supabase
             .from("profiles")
-            .select("full_name")
-            .eq("user_id", review.consumer_id)
-            .maybeSingle();
-          return { ...review, profiles: profile };
-        })
+            .select("user_id, full_name")
+            .in("user_id", consumerIds)
+        : { data: [] };
+
+      const profileMap = new Map(
+        (profiles || []).map((p) => [p.user_id, p])
       );
+
+      const reviewsWithNames = reviewData.map((review) => ({
+        ...review,
+        profiles: profileMap.get(review.consumer_id) || null,
+      }));
 
       setReviews(reviewsWithNames);
     } catch (error) {
