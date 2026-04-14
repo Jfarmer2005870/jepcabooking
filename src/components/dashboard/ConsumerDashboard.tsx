@@ -6,9 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Search, MapPin, Star, ArrowRight } from "lucide-react";
+import LeaveReviewDialog from "./LeaveReviewDialog";
 
 interface Booking {
   id: string;
+  business_id: string;
   status: string;
   scheduled_date: string | null;
   scheduled_time: string | null;
@@ -46,6 +48,7 @@ const ConsumerDashboard = () => {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -232,7 +235,11 @@ const ConsumerDashboard = () => {
                       {new Date(booking.created_at).toLocaleDateString()}
                     </span>
                     {booking.status === "completed" && (
-                      <Button variant="ghost" size="sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setReviewBooking(booking)}
+                      >
                         <Star className="w-4 h-4 mr-1" />
                         Leave Review
                       </Button>
@@ -243,6 +250,20 @@ const ConsumerDashboard = () => {
             ))}
           </div>
         </div>
+      )}
+
+      {reviewBooking && (
+        <LeaveReviewDialog
+          open={!!reviewBooking}
+          onOpenChange={(open) => !open && setReviewBooking(null)}
+          bookingId={reviewBooking.id}
+          businessId={reviewBooking.business_id}
+          serviceName={reviewBooking.services.title}
+          businessName={reviewBooking.business_profiles.business_name}
+          onReviewSubmitted={() => {
+            setReviewBooking(null);
+          }}
+        />
       )}
     </div>
   );
