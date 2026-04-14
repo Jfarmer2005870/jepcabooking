@@ -66,7 +66,8 @@ const CTASection = () => {
           >
             <Button
               size="xl"
-              className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-strong"
+              variant="heroOutline"
+              className="border-primary-foreground/50 text-primary-foreground hover:bg-primary-foreground/10"
               asChild
             >
               <Link to="/auth">
@@ -77,7 +78,7 @@ const CTASection = () => {
             <Button
               size="xl"
               variant="heroOutline"
-              className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10"
+              className="border-primary-foreground/50 text-primary-foreground hover:bg-primary-foreground/10"
               asChild
             >
               <Link to="/services">Browse Services</Link>
