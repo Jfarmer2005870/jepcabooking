@@ -5,7 +5,7 @@ const Footer = forwardRef<HTMLElement>((props, ref) => {
   const footerLinks = {
     product: [
       { label: "Features", href: "#services" },
-      { label: "Pricing", href: "#pricing" },
+      { label: "Pricing", href: "/pricing", isRoute: true },
       { label: "Find Services", href: "/services", isRoute: true },
     ],
     company: [
