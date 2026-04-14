@@ -96,6 +96,7 @@ const ServiceDetail = () => {
   const [time, setTime] = useState("");
   const [address, setAddress] = useState("");
   const [useHomeAddress, setUseHomeAddress] = useState(false);
+  const [estimatedHours, setEstimatedHours] = useState<number>(1);
   const [homeAddress, setHomeAddress] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
