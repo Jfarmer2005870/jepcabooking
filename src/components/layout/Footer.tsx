@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const Footer = forwardRef<HTMLElement>((props, ref) => {
   const footerLinks = {
     product: [
-      { label: "Features", href: "#services" },
+      { label: "Features", href: "/features", isRoute: true },
       { label: "Pricing", href: "/pricing", isRoute: true },
       { label: "Find Services", href: "/services", isRoute: true },
     ],
