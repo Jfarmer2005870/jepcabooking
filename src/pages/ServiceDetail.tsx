@@ -385,6 +385,9 @@ const ServiceDetail = () => {
                   )}
                 </CardContent>
               </Card>
+
+              {/* Reviews Dropdown */}
+              <ServiceReviews businessId={service.business_profiles.id} />
             </div>
 
             {/* Booking Card */}
