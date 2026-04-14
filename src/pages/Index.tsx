@@ -5,6 +5,7 @@ import ServiceCategories from "@/components/home/ServiceCategories";
 import HowItWorks from "@/components/home/HowItWorks";
 import BusinessFeatures from "@/components/home/BusinessFeatures";
 
+import PricingSection from "@/components/home/PricingSection";
 import CTASection from "@/components/home/CTASection";
 
 const Index = () => {
@@ -15,8 +16,8 @@ const Index = () => {
         <HeroSection />
         <ServiceCategories />
         <HowItWorks />
-        
         <BusinessFeatures />
+        <PricingSection />
         <CTASection />
       </main>
       <Footer />
