@@ -64,6 +64,23 @@ const LeaveReviewDialog = ({
 
       if (error) throw error;
 
+      // Send notification to business owner
+      const { data: bizProfile } = await supabase
+        .from("business_profiles")
+        .select("user_id")
+        .eq("id", businessId)
+        .maybeSingle();
+
+      if (bizProfile?.user_id) {
+        await supabase.from("notifications").insert({
+          user_id: bizProfile.user_id,
+          type: "review",
+          title: "New Review Received",
+          message: `You received a ${rating}-star review for "${serviceName}"`,
+          related_id: bookingId,
+        });
+      }
+
       toast({
         title: "Review submitted!",
         description: "Thank you for your feedback.",
