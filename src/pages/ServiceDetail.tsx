@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import ChatDialog from "@/components/chat/ChatDialog";
+import ServiceReviews from "@/components/reviews/ServiceReviews";
 import { 
   MapPin, 
   Star, 

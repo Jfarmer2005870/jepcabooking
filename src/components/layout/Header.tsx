@@ -2,6 +2,7 @@ import React, { useState, forwardRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut, User, Building2, MessageSquare } from "lucide-react";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import {
