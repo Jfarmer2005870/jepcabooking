@@ -105,6 +105,7 @@ const Header = forwardRef<HTMLElement>((props, ref) => {
               <div className="w-20 h-9 bg-secondary animate-pulse rounded-md" />
             ) : user ? (
               <>
+                <NotificationBell />
                 <Button
                   variant="ghost"
                   size="icon"
