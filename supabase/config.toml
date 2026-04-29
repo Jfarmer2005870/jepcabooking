@@ -1,13 +1,13 @@
 project_id = "jgzsfthqelwglxjxsnut"
 
-[functions.connect-stripe-account]
-verify_jwt = false
-
-[functions.create-booking-checkout]
-verify_jwt = false
-
-[functions.stripe-webhook]
-verify_jwt = false
-
-[functions.process-email-queue]
-verify_jwt = true
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.connect-stripe-account]
+    verify_jwt = false
+  [functions.create-booking-checkout]
+    verify_jwt = false
+  [functions.process-email-queue]
+    verify_jwt = true
+  [functions.stripe-webhook]
+    verify_jwt = false
