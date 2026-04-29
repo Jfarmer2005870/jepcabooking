@@ -20,10 +20,13 @@ export type Database = {
           business_id: string
           consumer_id: string
           created_at: string
+          dispute_status: string | null
           id: string
           notes: string | null
           payment_intent_id: string | null
+          payment_status: string | null
           platform_fee: number | null
+          refunded_amount: number | null
           scheduled_date: string | null
           scheduled_time: string | null
           service_address: string | null
@@ -37,10 +40,13 @@ export type Database = {
           business_id: string
           consumer_id: string
           created_at?: string
+          dispute_status?: string | null
           id?: string
           notes?: string | null
           payment_intent_id?: string | null
+          payment_status?: string | null
           platform_fee?: number | null
+          refunded_amount?: number | null
           scheduled_date?: string | null
           scheduled_time?: string | null
           service_address?: string | null
@@ -54,10 +60,13 @@ export type Database = {
           business_id?: string
           consumer_id?: string
           created_at?: string
+          dispute_status?: string | null
           id?: string
           notes?: string | null
           payment_intent_id?: string | null
+          payment_status?: string | null
           platform_fee?: number | null
+          refunded_amount?: number | null
           scheduled_date?: string | null
           scheduled_time?: string | null
           service_address?: string | null
