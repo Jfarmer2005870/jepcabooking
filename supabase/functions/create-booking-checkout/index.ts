@@ -145,7 +145,28 @@ serve(async (req) => {
         .eq("id", booking.id);
     }
 
-    return new Response(JSON.stringify({ 
+    // Send "booking received" email (fire and forget)
+    try {
+      await supabaseClient.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "booking-received",
+          recipientEmail: user.email,
+          idempotencyKey: `booking-received-${booking.id}`,
+          templateData: {
+            serviceName: service.title,
+            businessName: businessProfile.business_name,
+            scheduledDate: scheduled_date,
+            scheduledTime: scheduled_time,
+            serviceAddress: service_address,
+            totalPrice: (totalCents / 100).toFixed(2),
+          },
+        },
+      });
+    } catch (e) {
+      console.error("Failed to enqueue booking-received email:", e);
+    }
+
+    return new Response(JSON.stringify({
       url: session.url,
       booking_id: booking.id,
       total: totalCents / 100,

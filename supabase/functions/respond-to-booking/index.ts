@@ -44,7 +44,7 @@ serve(async (req) => {
     // Verify business owns this booking
     const { data: booking, error: bErr } = await admin
       .from("bookings")
-      .select("*, business_profiles!inner(user_id), services(title)")
+      .select("*, business_profiles!inner(user_id, business_name), services(title), profiles:consumer_id(email)")
       .eq("id", booking_id)
       .maybeSingle();
     if (bErr || !booking) throw new Error("Booking not found");
@@ -103,6 +103,29 @@ serve(async (req) => {
         message: `Your booking for "${booking.services?.title || "the service"}" was declined. No charge was made.`,
         related_id: booking_id,
       });
+    }
+
+    // Send transactional email to consumer (fire and forget)
+    const consumerEmail = (booking as any).profiles?.email;
+    if (consumerEmail) {
+      try {
+        await admin.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: action === "accept" ? "booking-accepted" : "booking-declined",
+            recipientEmail: consumerEmail,
+            idempotencyKey: `${action === "accept" ? "accepted" : "declined"}-${booking_id}`,
+            templateData: {
+              serviceName: booking.services?.title,
+              businessName: booking.business_profiles?.business_name,
+              scheduledDate: booking.scheduled_date,
+              scheduledTime: booking.scheduled_time,
+              serviceAddress: booking.service_address,
+            },
+          },
+        });
+      } catch (e) {
+        console.error("Failed to enqueue booking response email:", e);
+      }
     }
 
     return new Response(JSON.stringify({ success: true, status: action === "accept" ? "confirmed" : "cancelled" }), {
