@@ -17,6 +17,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
 import Pricing from "./pages/Pricing";
 import Features from "./pages/Features";
+import Unsubscribe from "./pages/Unsubscribe";
 import AICategoryHelper from "@/components/ai/AICategoryHelper";
 
 const queryClient = new QueryClient({
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/cookies" element={<CookiePolicy />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/features" element={<Features />} />
+              <Route path="/unsubscribe" element={<Unsubscribe />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

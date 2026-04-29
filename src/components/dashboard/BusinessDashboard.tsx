@@ -272,6 +272,26 @@ const BusinessDashboard = () => {
           .update({ status: newStatus })
           .eq("id", bookingId);
         if (error) throw error;
+
+        // Send completion email to consumer
+        if (newStatus === "completed" && current?.profiles?.email) {
+          try {
+            const origin = window.location.origin;
+            await supabase.functions.invoke("send-transactional-email", {
+              body: {
+                templateName: "booking-completed",
+                recipientEmail: current.profiles.email,
+                idempotencyKey: `completed-${bookingId}`,
+                templateData: {
+                  serviceName: current.services?.title,
+                  reviewUrl: `${origin}/dashboard`,
+                },
+              },
+            });
+          } catch (e) {
+            console.error("Failed to send completion email:", e);
+          }
+        }
       }
 
       setBookings(bookings.map((b) =>
