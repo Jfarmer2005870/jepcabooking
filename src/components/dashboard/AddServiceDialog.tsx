@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { serviceSchema, validateForm } from "@/lib/validations";
 
 interface AddServiceDialogProps {
@@ -55,6 +55,7 @@ type PriceTypeValue = typeof priceTypes[number]["value"];
 const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: AddServiceDialogProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     title: "",
@@ -174,12 +175,55 @@ const AddServiceDialog = ({ open, onOpenChange, businessId, onServiceAdded }: Ad
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="description">Description</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={aiLoading || !formData.title}
+                onClick={async () => {
+                  setAiLoading(true);
+                  try {
+                    const { data, error } = await supabase.functions.invoke("ai-assist", {
+                      body: {
+                        action: "describe_service",
+                        payload: {
+                          title: formData.title,
+                          category: formData.category,
+                          price_type: formData.price_type,
+                          price_min: formData.price_min,
+                          includes: formData.description,
+                        },
+                      },
+                    });
+                    if (error) throw error;
+                    if (data?.error) throw new Error(data.error);
+                    setFormData((prev) => ({ ...prev, description: data?.result || prev.description }));
+                  } catch (e) {
+                    toast({
+                      title: "AI error",
+                      description: e instanceof Error ? e.message : "Could not generate",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setAiLoading(false);
+                  }
+                }}
+              >
+                {aiLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5 mr-1" />
+                )}
+                {formData.description ? "Improve with AI" : "Generate with AI"}
+              </Button>
+            </div>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Describe what's included in this service..."
+              placeholder="Describe what's included in this service... or click 'Generate with AI'"
               rows={3}
               className={errors.description ? "border-destructive" : ""}
               maxLength={1000}
