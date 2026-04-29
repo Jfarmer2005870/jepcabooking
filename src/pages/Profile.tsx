@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { User, Building2, Save, Loader2 } from "lucide-react";
 import { profileSchema, businessProfileSchema, validateForm } from "@/lib/validations";
+import PaymentMethods from "@/components/profile/PaymentMethods";
 
 interface ProfileData {
   full_name: string;
@@ -456,6 +457,8 @@ const Profile = () => {
                 </CardContent>
               </Card>
             )}
+
+            {userRole === "consumer" && <PaymentMethods />}
 
             <div className="flex justify-end pt-4">
               <Button 
