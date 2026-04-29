@@ -121,6 +121,7 @@ serve(async (req) => {
       ],
       mode: "payment",
       payment_intent_data: {
+        capture_method: "manual",
         application_fee_amount: platformFeeCents,
         transfer_data: {
           destination: businessProfile.stripe_account_id,

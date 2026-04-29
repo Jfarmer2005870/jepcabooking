@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       bookings: {
         Row: {
+          auto_cancel_at: string | null
           business_id: string
           consumer_id: string
           created_at: string
@@ -32,6 +33,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_cancel_at?: string | null
           business_id: string
           consumer_id: string
           created_at?: string
@@ -48,6 +50,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_cancel_at?: string | null
           business_id?: string
           consumer_id?: string
           created_at?: string

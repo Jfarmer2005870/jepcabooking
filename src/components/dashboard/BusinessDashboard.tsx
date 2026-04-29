@@ -258,14 +258,22 @@ const BusinessDashboard = () => {
   const updateBookingStatus = async (bookingId: string, newStatus: "pending" | "confirmed" | "in_progress" | "completed" | "cancelled") => {
     setUpdatingBooking(bookingId);
     try {
-      const { error } = await supabase
-        .from("bookings")
-        .update({ status: newStatus })
-        .eq("id", bookingId);
+      // For pending → confirmed/cancelled, route through edge function so payment is captured/cancelled.
+      const current = bookings.find((b) => b.id === bookingId);
+      if (current?.status === "pending" && (newStatus === "confirmed" || newStatus === "cancelled")) {
+        const { error } = await supabase.functions.invoke("respond-to-booking", {
+          body: { booking_id: bookingId, action: newStatus === "confirmed" ? "accept" : "decline" },
+        });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("bookings")
+          .update({ status: newStatus })
+          .eq("id", bookingId);
+        if (error) throw error;
+      }
 
-      if (error) throw error;
-
-      setBookings(bookings.map((b) => 
+      setBookings(bookings.map((b) =>
         b.id === bookingId ? { ...b, status: newStatus } : b
       ));
 

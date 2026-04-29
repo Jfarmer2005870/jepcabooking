@@ -37,7 +37,7 @@ const statusColors: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  pending: "Pending",
+  pending: "Awaiting business approval",
   confirmed: "Confirmed",
   in_progress: "In Progress",
   completed: "Completed",
