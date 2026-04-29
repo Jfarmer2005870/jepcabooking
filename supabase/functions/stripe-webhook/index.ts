@@ -50,7 +50,7 @@ serve(async (req) => {
     const findBookingByPI = async (paymentIntentId: string) => {
       const { data } = await admin
         .from("bookings")
-        .select("id, consumer_id, business_id, services(title)")
+        .select("id, consumer_id, business_id, services(title), profiles:consumer_id(email)")
         .eq("payment_intent_id", paymentIntentId)
         .maybeSingle();
       return data;
@@ -110,6 +110,27 @@ serve(async (req) => {
             message: `A refund of $${refundedAmount.toFixed(2)} has been issued for "${(booking as any).services?.title || "your booking"}".`,
             related_id: booking.id,
           });
+
+          // Email the consumer
+          const consumerEmail = (booking as any).profiles?.email;
+          if (consumerEmail) {
+            try {
+              await admin.functions.invoke("send-transactional-email", {
+                body: {
+                  templateName: "refund-issued",
+                  recipientEmail: consumerEmail,
+                  idempotencyKey: `refund-${booking.id}-${charge.id}`,
+                  templateData: {
+                    serviceName: (booking as any).services?.title,
+                    refundAmount: refundedAmount.toFixed(2),
+                    fullRefund: !!charge.refunded,
+                  },
+                },
+              });
+            } catch (e) {
+              console.error("Failed to enqueue refund email:", e);
+            }
+          }
         }
         break;
       }
