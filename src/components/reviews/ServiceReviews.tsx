@@ -6,7 +6,9 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
-import { Star, ChevronDown, ChevronUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Star, ChevronDown, ChevronUp, Sparkles, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Review {
   id: string;
@@ -23,9 +25,42 @@ interface ServiceReviewsProps {
 }
 
 const ServiceReviews = ({ businessId }: ServiceReviewsProps) => {
+  const { toast } = useToast();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [insights, setInsights] = useState<{
+    strengths: string[];
+    concerns: string[];
+    summary: string;
+  } | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+
+  const generateInsights = async () => {
+    if (reviews.length === 0) return;
+    setInsightsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("ai-assist", {
+        body: {
+          action: "review_insights",
+          payload: {
+            reviews: reviews.map((r) => ({ rating: r.rating, comment: r.comment })),
+          },
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setInsights(data?.result || null);
+    } catch (e) {
+      toast({
+        title: "AI error",
+        description: e instanceof Error ? e.message : "Could not analyze",
+        variant: "destructive",
+      });
+    } finally {
+      setInsightsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isOpen && reviews.length === 0) {
@@ -107,11 +142,62 @@ const ServiceReviews = ({ businessId }: ServiceReviewsProps) => {
             No reviews yet
           </div>
         ) : (
-          reviews.map((review) => (
-            <div
-              key={review.id}
-              className="p-3 bg-muted/50 rounded-lg space-y-1"
-            >
+          <>
+            {reviews.length >= 2 && (
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-primary" />
+                    AI insights
+                  </span>
+                  {!insights && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-xs"
+                      disabled={insightsLoading}
+                      onClick={generateInsights}
+                    >
+                      {insightsLoading ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        "Analyze reviews"
+                      )}
+                    </Button>
+                  )}
+                </div>
+                {insights && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-foreground">{insights.summary}</p>
+                    {insights.strengths.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="text-xs text-muted-foreground self-center">Strengths:</span>
+                        {insights.strengths.map((s, i) => (
+                          <Badge key={i} variant="secondary" className="text-xs">
+                            {s}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    {insights.concerns.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        <span className="text-xs text-muted-foreground self-center">Concerns:</span>
+                        {insights.concerns.map((s, i) => (
+                          <Badge key={i} variant="outline" className="text-xs">
+                            {s}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            {reviews.map((review) => (
+              <div
+                key={review.id}
+                className="p-3 bg-muted/50 rounded-lg space-y-1"
+              >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
