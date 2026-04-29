@@ -222,7 +222,8 @@ const ServiceReviews = ({ businessId }: ServiceReviewsProps) => {
                 — {review.profiles?.full_name || "Anonymous"}
               </p>
             </div>
-          ))
+            ))}
+          </>
         )}
       </CollapsibleContent>
     </Collapsible>
