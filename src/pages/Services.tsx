@@ -270,11 +270,11 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
                             {service.business_profiles.city}, {service.business_profiles.state}
                           </span>
                         )}
-                        {service.business_profiles.rating && service.business_profiles.rating > 0 && (
+                        {!!service.business_profiles.rating && service.business_profiles.rating > 0 && (
                           <span className="flex items-center gap-1">
                             <Star className="w-4 h-4 fill-accent text-accent" />
                             {service.business_profiles.rating.toFixed(1)}
-                            {service.business_profiles.total_reviews && (
+                            {!!service.business_profiles.total_reviews && service.business_profiles.total_reviews > 0 && (
                               <span>({service.business_profiles.total_reviews})</span>
                             )}
                           </span>
