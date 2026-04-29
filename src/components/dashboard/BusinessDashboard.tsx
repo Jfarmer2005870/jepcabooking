@@ -274,28 +274,20 @@ const BusinessDashboard = () => {
         if (error) throw error;
 
         // Send completion email to consumer
-        if (newStatus === "completed" && current) {
+        if (newStatus === "completed" && current?.profiles?.email) {
           try {
-            const { data: consumer } = await supabase
-              .from("profiles")
-              .select("email")
-              .eq("user_id", current.consumer_id)
-              .maybeSingle();
-            if (consumer?.email) {
-              const origin = window.location.origin;
-              await supabase.functions.invoke("send-transactional-email", {
-                body: {
-                  templateName: "booking-completed",
-                  recipientEmail: consumer.email,
-                  idempotencyKey: `completed-${bookingId}`,
-                  templateData: {
-                    serviceName: (current as any).services?.title,
-                    businessName: (current as any).business_profiles?.business_name,
-                    reviewUrl: `${origin}/services/${(current as any).service_id}`,
-                  },
+            const origin = window.location.origin;
+            await supabase.functions.invoke("send-transactional-email", {
+              body: {
+                templateName: "booking-completed",
+                recipientEmail: current.profiles.email,
+                idempotencyKey: `completed-${bookingId}`,
+                templateData: {
+                  serviceName: current.services?.title,
+                  reviewUrl: `${origin}/dashboard`,
                 },
-              });
-            }
+              },
+            });
           } catch (e) {
             console.error("Failed to send completion email:", e);
           }
