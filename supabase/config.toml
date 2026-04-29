@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.create-booking-checkout]
 verify_jwt = false
+
+[functions.stripe-webhook]
+verify_jwt = false
