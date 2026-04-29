@@ -17,6 +17,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import CookiePolicy from "./pages/CookiePolicy";
 import Pricing from "./pages/Pricing";
 import Features from "./pages/Features";
+import AICategoryHelper from "@/components/ai/AICategoryHelper";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +52,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <AICategoryHelper />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

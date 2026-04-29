@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AddServiceDialog from "./AddServiceDialog";
+import AISummarizeNotes from "./AISummarizeNotes";
 
 interface BusinessProfile {
   id: string;
@@ -495,9 +496,12 @@ const BusinessDashboard = () => {
                   </div>
                   
                   {booking.notes && (
-                    <p className="text-sm text-muted-foreground mb-4 bg-muted/50 p-2 rounded">
-                      <span className="font-medium">Notes:</span> "{booking.notes}"
-                    </p>
+                    <div className="mb-4">
+                      <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                        <span className="font-medium">Notes:</span> "{booking.notes}"
+                      </p>
+                      <AISummarizeNotes notes={booking.notes} />
+                    </div>
                   )}
                   <div className="flex gap-2">
                     <Button
