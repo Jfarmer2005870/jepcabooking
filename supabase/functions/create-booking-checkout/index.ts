@@ -38,7 +38,7 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    const { service_id, scheduled_date, scheduled_time, service_address, notes, estimated_hours } = await req.json();
+    const { service_id, scheduled_date, scheduled_time, service_address, service_lat, service_lng, notes, estimated_hours } = await req.json();
 
     if (!service_id) throw new Error("Service ID is required");
 
