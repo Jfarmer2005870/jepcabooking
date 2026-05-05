@@ -19,6 +19,7 @@ import Pricing from "./pages/Pricing";
 import Features from "./pages/Features";
 import Unsubscribe from "./pages/Unsubscribe";
 import AICategoryHelper from "@/components/ai/AICategoryHelper";
+import OnboardingGuide from "@/components/OnboardingGuide";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -55,6 +56,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             <AICategoryHelper />
+            <OnboardingGuide />
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
