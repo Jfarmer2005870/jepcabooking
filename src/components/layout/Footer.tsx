@@ -9,10 +9,10 @@ const Footer = forwardRef<HTMLElement>((props, ref) => {
       { label: "Find Services", href: "/services", isRoute: true },
     ],
     company: [
-      { label: "About", href: "#" },
-      { label: "Careers", href: "#" },
-      { label: "Blog", href: "#" },
-      { label: "Press", href: "#" },
+      { label: "About Jepca", href: "/features", isRoute: true },
+      { label: "For providers", href: "/auth?mode=signup&role=business", isRoute: true },
+      { label: "Trust & safety", href: "/terms", isRoute: true },
+      { label: "Press inquiries", href: "mailto:press@jepca.app" },
     ],
     resources: [
       { label: "How it works", href: "/features", isRoute: true },
