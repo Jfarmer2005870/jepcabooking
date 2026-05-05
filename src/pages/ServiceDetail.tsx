@@ -551,49 +551,68 @@ const ServiceDetail = () => {
                   </div>
 
                   {/* Price breakdown */}
-                  {service.price_min && (
-                    <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
-                      {service.price_type === "hourly" ? (
-                        <>
+                  {service.price_min && (() => {
+                    const bp: any = service.business_profiles;
+                    const activeCoords = useHomeAddress && homeCoords ? homeCoords : coords;
+                    const hasOrigin = bp?.origin_lat != null && bp?.origin_lng != null;
+                    const distance = hasOrigin && activeCoords
+                      ? haversineMiles({ lat: bp.origin_lat, lng: bp.origin_lng }, activeCoords)
+                      : null;
+                    const freeRadius = Number(bp?.free_radius_miles ?? 10);
+                    const perMile = Number(bp?.per_mile_rate ?? 0);
+                    const travelFee = distance != null ? calcTravelFee(distance, freeRadius, perMile) : 0;
+                    const subtotal = service.price_type === "hourly"
+                      ? service.price_min * estimatedHours
+                      : service.price_min;
+                    const withTravel = subtotal + travelFee;
+                    const platformFee = withTravel * 0.05;
+                    const total = withTravel + platformFee;
+                    return (
+                      <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
+                        {service.price_type === "hourly" ? (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Hourly rate</span>
+                              <span className="text-foreground">${service.price_min.toFixed(2)}/hr</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Estimated hours</span>
+                              <span className="text-foreground">{estimatedHours} hr{estimatedHours !== 1 ? 's' : ''}</span>
+                            </div>
+                          </>
+                        ) : null}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">{service.price_type === "hourly" ? "Subtotal" : "Service price"}</span>
+                          <span className="text-foreground">${subtotal.toFixed(2)}</span>
+                        </div>
+                        {distance != null && (
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">Hourly rate</span>
-                            <span className="text-foreground">${service.price_min.toFixed(2)}/hr</span>
+                            <span className="text-muted-foreground">
+                              Travel ({distance.toFixed(1)} mi
+                              {perMile > 0 && distance > freeRadius
+                                ? `, ${(distance - freeRadius).toFixed(1)} billable @ $${perMile}/mi`
+                                : ", within free radius"})
+                            </span>
+                            <span className="text-foreground">${travelFee.toFixed(2)}</span>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Estimated hours</span>
-                            <span className="text-foreground">{estimatedHours} hr{estimatedHours !== 1 ? 's' : ''}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Subtotal</span>
-                            <span className="text-foreground">${(service.price_min * estimatedHours).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Platform fee (5%)</span>
-                            <span className="text-foreground">${(service.price_min * estimatedHours * 0.05).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between font-semibold border-t border-border pt-1">
-                            <span className="text-foreground">Total</span>
-                            <span className="text-primary">${(service.price_min * estimatedHours * 1.05).toFixed(2)}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Service price</span>
-                            <span className="text-foreground">${service.price_min.toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Platform fee (5%)</span>
-                            <span className="text-foreground">${(service.price_min * 0.05).toFixed(2)}</span>
-                          </div>
-                          <div className="flex justify-between font-semibold border-t border-border pt-1">
-                            <span className="text-foreground">Total</span>
-                            <span className="text-primary">${(service.price_min * 1.05).toFixed(2)}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  )}
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Platform fee (5%)</span>
+                          <span className="text-foreground">${platformFee.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold border-t border-border pt-1">
+                          <span className="text-foreground">Total</span>
+                          <span className="text-primary">${total.toFixed(2)}</span>
+                        </div>
+                        {!hasOrigin && perMile > 0 && (
+                          <p className="text-xs text-muted-foreground pt-1">Provider hasn't set a dispatch origin yet.</p>
+                        )}
+                        {hasOrigin && !activeCoords && (
+                          <p className="text-xs text-muted-foreground pt-1">Drop a pin on the map to see travel fee.</p>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   <Button
                     className="w-full"
