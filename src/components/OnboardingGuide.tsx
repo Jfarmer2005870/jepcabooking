@@ -1,56 +1,49 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronRight, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
-const STORAGE_KEY = "jepca_onboarding_seen_v2";
+const STORAGE_KEY = "jepca_onboarding_seen_v3";
+export const ONBOARDING_EVENT = "jepca:start-onboarding";
+
+type Placement = "top" | "bottom" | "left" | "right" | "auto";
 
 type Step = {
-  target?: string; // data-tour attribute value
+  target?: string;
   title: string;
   desc: string;
-  placement?: "top" | "bottom" | "auto";
+  placement?: Placement;
 };
 
-const steps: Step[] = [
-  {
-    title: "Welcome to Jepca",
-    desc: "A quick 4-step tour so you know exactly how to book a local pro.",
-  },
-  {
-    target: "search",
-    title: "Search for a service",
-    desc: "Type what you need — cleaning, plumbing, lawn care, anything.",
-    placement: "bottom",
-  },
-  {
-    target: "address",
-    title: "Set your address",
-    desc: "We use it to match nearby pros and calculate travel fees.",
-    placement: "bottom",
-  },
-  {
-    target: "categories",
-    title: "Or browse by category",
-    desc: "Tap any category to jump straight to available pros.",
-    placement: "top",
-  },
-  {
-    target: "tab-orders",
-    title: "Track your bookings",
-    desc: "Open Orders any time to see status, chat, and invoices.",
-    placement: "top",
-  },
+const consumerSteps: Step[] = [
+  { title: "Welcome to Jepca", desc: "A quick tour so you know exactly how to book a local pro." },
+  { target: "search", title: "Search for a service", desc: "Type what you need — cleaning, plumbing, lawn care, anything.", placement: "bottom" },
+  { target: "address", title: "Set your address", desc: "We use it to match nearby pros and calculate travel fees.", placement: "bottom" },
+  { target: "categories", title: "Or browse by category", desc: "Tap any category to jump straight to available pros.", placement: "auto" },
+  { target: "tab-orders", title: "Track your bookings", desc: "Open Orders any time to see status, chat, and invoices.", placement: "top" },
+  { target: "tab-account", title: "Your account", desc: "Save your address, payment methods, and re-run this tour anytime.", placement: "top" },
+];
+
+const businessSteps: Step[] = [
+  { title: "Welcome to Jepca", desc: "A quick tour so you can start receiving and managing jobs." },
+  { target: "tab-orders", title: "Manage incoming jobs", desc: "Accept new requests, message clients, and send invoices from here.", placement: "top" },
+  { target: "tab-account", title: "Your business profile", desc: "Set your service area, pricing, and payout details.", placement: "top" },
+  { target: "search", title: "See how clients find you", desc: "This is the search clients use — make sure your profile keywords match what people look for.", placement: "bottom" },
 ];
 
 type Rect = { top: number; left: number; width: number; height: number };
 
 const PADDING = 8;
+const TIP_W = 340;
+const TIP_H = 200;
+const GAP = 12;
 
 const getRect = (sel: string): Rect | null => {
   const el = document.querySelector(`[data-tour="${sel}"]`) as HTMLElement | null;
   if (!el) return null;
   const r = el.getBoundingClientRect();
+  if (r.width === 0 && r.height === 0) return null;
   return { top: r.top - PADDING, left: r.left - PADDING, width: r.width + PADDING * 2, height: r.height + PADDING * 2 };
 };
 
@@ -60,7 +53,48 @@ const isInViewport = (r: Rect): boolean => {
   return r.top >= 0 && r.left >= 0 && r.top + r.height <= vh && r.left + r.width <= vw;
 };
 
+const computePlacement = (rect: Rect, preferred: Placement, vw: number, vh: number, tipW: number): { top: number; left: number; placement: Exclude<Placement, "auto"> } => {
+  const space = {
+    top: rect.top,
+    bottom: vh - (rect.top + rect.height),
+    left: rect.left,
+    right: vw - (rect.left + rect.width),
+  };
+
+  let placement: Exclude<Placement, "auto">;
+  if (preferred !== "auto") {
+    placement = preferred;
+    // fallback if preferred doesn't fit
+    const need = placement === "top" || placement === "bottom" ? TIP_H + GAP : tipW + GAP;
+    if (space[placement] < need) {
+      placement = (Object.entries(space).sort((a, b) => b[1] - a[1])[0][0]) as Exclude<Placement, "auto">;
+    }
+  } else {
+    placement = (Object.entries(space).sort((a, b) => b[1] - a[1])[0][0]) as Exclude<Placement, "auto">;
+  }
+
+  let top = 0;
+  let left = 0;
+  if (placement === "bottom") {
+    top = rect.top + rect.height + GAP;
+    left = rect.left + rect.width / 2 - tipW / 2;
+  } else if (placement === "top") {
+    top = rect.top - TIP_H - GAP;
+    left = rect.left + rect.width / 2 - tipW / 2;
+  } else if (placement === "right") {
+    top = rect.top + rect.height / 2 - TIP_H / 2;
+    left = rect.left + rect.width + GAP;
+  } else {
+    top = rect.top + rect.height / 2 - TIP_H / 2;
+    left = rect.left - tipW - GAP;
+  }
+  top = Math.min(Math.max(12, top), vh - TIP_H - 12);
+  left = Math.min(Math.max(12, left), vw - tipW - 12);
+  return { top, left, placement };
+};
+
 const OnboardingGuide = () => {
+  const { userRole } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
@@ -68,6 +102,12 @@ const OnboardingGuide = () => {
   const [timedOut, setTimedOut] = useState(false);
   const [retryNonce, setRetryNonce] = useState(0);
 
+  const steps = useMemo<Step[]>(
+    () => (userRole === "business" ? businessSteps : consumerSteps),
+    [userRole]
+  );
+
+  // First-time auto-start
   useEffect(() => {
     try {
       if (!localStorage.getItem(STORAGE_KEY)) {
@@ -75,6 +115,16 @@ const OnboardingGuide = () => {
         return () => clearTimeout(t);
       }
     } catch {}
+  }, []);
+
+  // Manual replay via custom event
+  useEffect(() => {
+    const handler = () => {
+      setStep(0);
+      setOpen(true);
+    };
+    window.addEventListener(ONBOARDING_EVENT, handler);
+    return () => window.removeEventListener(ONBOARDING_EVENT, handler);
   }, []);
 
   const current = steps[step];
@@ -85,7 +135,7 @@ const OnboardingGuide = () => {
     setRect(null);
     setTimedOut(false);
 
-    if (!current.target) {
+    if (!current?.target) {
       setReady(true);
       return;
     }
@@ -112,7 +162,6 @@ const OnboardingGuide = () => {
         }
       }
       if (performance.now() - start > TIMEOUT) {
-        // Timed out — surface Retry UI instead of forcing the tooltip
         setRect(r);
         setTimedOut(true);
         return;
@@ -135,62 +184,45 @@ const OnboardingGuide = () => {
       window.removeEventListener("resize", sync);
       window.removeEventListener("scroll", sync, true);
     };
-  }, [open, step, current.target, retryNonce]);
+  }, [open, step, current?.target, retryNonce]);
 
   const finish = () => {
     try { localStorage.setItem(STORAGE_KEY, "1"); } catch {}
     setOpen(false);
   };
-
   const next = () => (step < steps.length - 1 ? setStep(step + 1) : finish());
   const back = () => step > 0 && setStep(step - 1);
-  const retry = () => setRetryNonce((n) => n + 1);
+  const retry = () => { setTimedOut(false); setRetryNonce((n) => n + 1); };
   const skipStep = () => next();
 
   if (!open) return null;
 
-  // Tooltip placement
   const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
   const vh = typeof window !== "undefined" ? window.innerHeight : 800;
-  const tipWidth = Math.min(340, vw - 24);
-  let tipTop = vh / 2 - 80;
-  let tipLeft = vw / 2 - tipWidth / 2;
+  const tipWidth = Math.min(TIP_W, vw - 24);
 
-  if (rect) {
-    const placement = current.placement === "top"
-      ? "top"
-      : current.placement === "bottom"
-      ? "bottom"
-      : rect.top > vh / 2 ? "top" : "bottom";
-    if (placement === "bottom") tipTop = Math.min(rect.top + rect.height + 12, vh - 220);
-    else tipTop = Math.max(12, rect.top - 200);
-    tipLeft = Math.min(Math.max(12, rect.left + rect.width / 2 - tipWidth / 2), vw - tipWidth - 12);
+  let tipTop = vh / 2 - TIP_H / 2;
+  let tipLeft = vw / 2 - tipWidth / 2;
+  if (rect && ready) {
+    const placed = computePlacement(rect, current.placement || "auto", vw, vh, tipWidth);
+    tipTop = placed.top;
+    tipLeft = placed.left;
   }
 
   const overlay = (
     <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="App tour">
-      {/* SVG mask creates spotlight cutout */}
       <svg className="absolute inset-0 w-full h-full pointer-events-auto" onClick={finish}>
         <defs>
           <mask id="tour-mask">
             <rect width="100%" height="100%" fill="white" />
             {rect && (
-              <rect
-                x={rect.left}
-                y={rect.top}
-                width={rect.width}
-                height={rect.height}
-                rx={16}
-                ry={16}
-                fill="black"
-              />
+              <rect x={rect.left} y={rect.top} width={rect.width} height={rect.height} rx={16} ry={16} fill="black" />
             )}
           </mask>
         </defs>
         <rect width="100%" height="100%" fill="rgba(10,20,30,0.65)" mask="url(#tour-mask)" />
       </svg>
 
-      {/* Highlight ring around target */}
       {rect && (
         <motion.div
           layout
@@ -201,7 +233,6 @@ const OnboardingGuide = () => {
         />
       )}
 
-      {/* Loading indicator while waiting for target to scroll into view */}
       {!ready && !timedOut && (
         <div
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 px-4 py-3 rounded-full bg-card border border-border shadow-strong"
@@ -209,11 +240,10 @@ const OnboardingGuide = () => {
           aria-live="polite"
         >
           <span className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          <span className="text-sm font-medium text-foreground">Locating…</span>
+          <span className="text-sm font-medium text-foreground">Locating step {step + 1} of {steps.length}…</span>
         </div>
       )}
 
-      {/* Timed out — Retry / Skip / Close */}
       {!ready && timedOut && (
         <div
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] max-w-[calc(100vw-24px)] bg-card text-card-foreground rounded-2xl shadow-strong border border-border p-5 text-center"
@@ -221,37 +251,21 @@ const OnboardingGuide = () => {
         >
           <h3 className="text-base font-bold font-display mb-1">Can't find that spot yet</h3>
           <p className="text-sm text-muted-foreground mb-3">
-            Try scrolling the page manually until the area you want highlighted is visible on screen, then tap Retry.
+            Scroll the page until the area is visible, then tap Retry.
           </p>
           <ol className="text-xs text-muted-foreground text-left mb-4 space-y-1 pl-4 list-decimal">
-            <li>Close this dialog or scroll behind it.</li>
+            <li>Scroll behind this dialog.</li>
             <li>Bring the relevant section into view.</li>
             <li>Tap <span className="font-semibold text-foreground">Retry</span> below.</li>
           </ol>
           <div className="flex items-center justify-center gap-2">
-            <button
-              onClick={finish}
-              className="h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground"
-            >
-              Close
-            </button>
-            <button
-              onClick={skipStep}
-              className="h-9 px-3 rounded-lg text-sm font-medium border border-border hover:bg-secondary"
-            >
-              Skip step
-            </button>
-            <button
-              onClick={retry}
-              className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-95"
-            >
-              Retry
-            </button>
+            <button onClick={finish} className="h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground">Close</button>
+            <button onClick={skipStep} className="h-9 px-3 rounded-lg text-sm font-medium border border-border hover:bg-secondary">Skip step</button>
+            <button onClick={retry} className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-95">Retry</button>
           </div>
         </div>
       )}
 
-      {/* Tooltip card — only when ready */}
       {ready && (
         <AnimatePresence mode="wait">
           <motion.div
@@ -267,11 +281,7 @@ const OnboardingGuide = () => {
               <div className="text-xs font-semibold text-primary uppercase tracking-wide">
                 Step {step + 1} of {steps.length}
               </div>
-              <button
-                onClick={finish}
-                aria-label="Close tour"
-                className="text-muted-foreground hover:text-foreground -mt-1 -mr-1 p-1"
-              >
+              <button onClick={finish} aria-label="Close tour" className="text-muted-foreground hover:text-foreground -mt-1 -mr-1 p-1">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -279,22 +289,19 @@ const OnboardingGuide = () => {
             <p className="text-sm text-muted-foreground mb-4">{current.desc}</p>
 
             <div className="flex items-center justify-between gap-3">
-              <div className="flex gap-1.5">
+              <div className="flex gap-1.5" aria-label={`Step ${step + 1} of ${steps.length}`}>
                 {steps.map((_, i) => (
-                  <span
+                  <button
                     key={i}
-                    className={`h-1.5 rounded-full transition-all ${i === step ? "w-5 bg-primary" : "w-1.5 bg-border"}`}
+                    onClick={() => setStep(i)}
+                    aria-label={`Go to step ${i + 1}`}
+                    className={`h-1.5 rounded-full transition-all ${i === step ? "w-5 bg-primary" : "w-1.5 bg-border hover:bg-muted-foreground/40"}`}
                   />
                 ))}
               </div>
               <div className="flex items-center gap-2">
                 {step > 0 && (
-                  <button
-                    onClick={back}
-                    className="h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground"
-                  >
-                    Back
-                  </button>
+                  <button onClick={back} className="h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground">Back</button>
                 )}
                 <button
                   onClick={next}
