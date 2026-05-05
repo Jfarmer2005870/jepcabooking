@@ -199,6 +199,7 @@ const ServiceDetail = () => {
     }
 
     const serviceAddress = useHomeAddress && homeAddress ? homeAddress : address.trim();
+    const serviceCoords = useHomeAddress && homeCoords ? homeCoords : coords;
     
     if (!serviceAddress) {
       toast({
@@ -217,6 +218,8 @@ const ServiceDetail = () => {
           scheduled_date: format(date, "yyyy-MM-dd"),
           scheduled_time: time,
           service_address: serviceAddress,
+          service_lat: serviceCoords?.lat ?? null,
+          service_lng: serviceCoords?.lng ?? null,
           notes: notes || null,
           estimated_hours: service!.price_type === "hourly" ? estimatedHours : null,
         },
@@ -498,7 +501,10 @@ const ServiceDetail = () => {
                     ) : (
                       <PinDropAddress
                         value={address}
-                        onChange={(addr) => setAddress(addr)}
+                        onChange={(addr, c) => {
+                          setAddress(addr);
+                          if (c) setCoords(c);
+                        }}
                       />
                     )}
                     
