@@ -14,17 +14,19 @@ import {
 } from "lucide-react";
 
 const categories = [
-  { icon: Sparkles, label: "Cleaning", slug: "cleaning", tint: "bg-purple-100 text-purple-700" },
-  { icon: Droplets, label: "Plumbing", slug: "plumbing", tint: "bg-cyan-100 text-cyan-700" },
-  { icon: Zap, label: "Electrical", slug: "electrical", tint: "bg-amber-100 text-amber-700" },
-  { icon: TreeDeciduous, label: "Lawn", slug: "landscaping", tint: "bg-emerald-100 text-emerald-700" },
-  { icon: Paintbrush, label: "Painting", slug: "painting", tint: "bg-pink-100 text-pink-700" },
-  { icon: Truck, label: "Moving", slug: "moving", tint: "bg-blue-100 text-blue-700" },
-  { icon: Hammer, label: "Handyman", slug: "handyman", tint: "bg-orange-100 text-orange-700" },
-  { icon: Wind, label: "HVAC", slug: "hvac", tint: "bg-teal-100 text-teal-700" },
-  { icon: Bug, label: "Pest", slug: "pest_control", tint: "bg-red-100 text-red-700" },
-  { icon: Wrench, label: "More", slug: "other", tint: "bg-gray-100 text-gray-700" },
+  { icon: Sparkles, label: "Cleaning", slug: "cleaning" },
+  { icon: Droplets, label: "Plumbing", slug: "plumbing" },
+  { icon: Zap, label: "Electrical", slug: "electrical" },
+  { icon: TreeDeciduous, label: "Lawn", slug: "landscaping" },
+  { icon: Paintbrush, label: "Painting", slug: "painting" },
+  { icon: Truck, label: "Moving", slug: "moving" },
+  { icon: Hammer, label: "Handyman", slug: "handyman" },
+  { icon: Wind, label: "HVAC", slug: "hvac" },
+  { icon: Bug, label: "Pest", slug: "pest_control" },
+  { icon: Wrench, label: "More", slug: "other" },
 ];
+
+const tileClass = "w-16 h-16 rounded-2xl bg-secondary text-primary flex items-center justify-center";
 
 const ServiceCategories = () => {
   return (
