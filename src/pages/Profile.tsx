@@ -328,7 +328,13 @@ const Profile = () => {
                     <Label>Home Address</Label>
                     <PinDropAddress
                       value={profile.home_address}
-                      onChange={(addr) => setProfile({ ...profile, home_address: addr })}
+                      initialCoords={profile.home_lat != null && profile.home_lng != null ? { lat: profile.home_lat, lng: profile.home_lng } : undefined}
+                      onChange={(addr, coords) => setProfile({
+                        ...profile,
+                        home_address: addr,
+                        home_lat: coords?.lat ?? profile.home_lat,
+                        home_lng: coords?.lng ?? profile.home_lng,
+                      })}
                     />
                     <p className="text-xs text-muted-foreground">
                       Drop a pin or search to save your home address for faster booking
