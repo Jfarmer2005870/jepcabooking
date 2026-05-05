@@ -113,7 +113,49 @@ const InvoiceDialog = ({ open, onOpenChange, booking, canSign, onSigned }: Props
         })
         .eq("id", booking.id);
       if (error) throw error;
-      toast({ title: "Invoice signed", description: "Your signature has been saved." });
+
+      // Notify consumer with the signed invoice (best-effort)
+      if (booking.profiles?.email) {
+        try {
+          const signedAt = new Date();
+          const platformFee = Number(booking.platform_fee || 0);
+          const travelFee = Number(booking.travel_fee || 0);
+          const total = Number(booking.total_price || 0);
+          const servicePrice = Math.max(0, total - platformFee - travelFee);
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "invoice-signed",
+              recipientEmail: booking.profiles.email,
+              idempotencyKey: `invoice-signed-${booking.id}`,
+              templateData: {
+                serviceName: booking.services?.title,
+                businessName: booking.business_profiles?.business_name,
+                invoiceNumber: booking.id.slice(0, 8).toUpperCase(),
+                scheduledDate: booking.scheduled_date
+                  ? new Date(booking.scheduled_date).toLocaleDateString()
+                  : undefined,
+                scheduledTime: booking.scheduled_time || undefined,
+                serviceAddress: booking.service_address || undefined,
+                servicePrice: servicePrice.toFixed(2),
+                travelDistanceMiles:
+                  booking.travel_distance_miles != null
+                    ? Number(booking.travel_distance_miles).toFixed(1)
+                    : undefined,
+                travelFee: travelFee.toFixed(2),
+                platformFee: platformFee.toFixed(2),
+                total: total.toFixed(2),
+                signedByName: signerName.trim(),
+                signedAt: signedAt.toLocaleString(),
+                invoiceUrl: `${window.location.origin}/dashboard`,
+              },
+            },
+          });
+        } catch (mailErr) {
+          console.error("Failed to send invoice email:", mailErr);
+        }
+      }
+
+      toast({ title: "Invoice signed", description: "Your signature has been saved and emailed to the customer." });
       onSigned?.();
     } catch (e: any) {
       toast({ title: "Error", description: e.message || "Failed to save signature", variant: "destructive" });

@@ -14,6 +14,7 @@ import { template as bookingAccepted } from './booking-accepted.tsx'
 import { template as bookingDeclined } from './booking-declined.tsx'
 import { template as bookingCompleted } from './booking-completed.tsx'
 import { template as refundIssued } from './refund-issued.tsx'
+import { template as invoiceSigned } from './invoice-signed.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'booking-received': bookingReceived,
@@ -21,4 +22,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'booking-declined': bookingDeclined,
   'booking-completed': bookingCompleted,
   'refund-issued': refundIssued,
+  'invoice-signed': invoiceSigned,
 }
