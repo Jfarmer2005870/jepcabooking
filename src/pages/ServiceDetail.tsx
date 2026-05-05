@@ -98,9 +98,11 @@ const ServiceDetail = () => {
   const [date, setDate] = useState<Date | undefined>();
   const [time, setTime] = useState("");
   const [address, setAddress] = useState("");
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [useHomeAddress, setUseHomeAddress] = useState(false);
   const [estimatedHours, setEstimatedHours] = useState<number>(1);
   const [homeAddress, setHomeAddress] = useState<string | null>(null);
+  const [homeCoords, setHomeCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [notes, setNotes] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -117,12 +119,16 @@ const ServiceDetail = () => {
       
       const { data } = await supabase
         .from("profiles")
-        .select("home_address")
+        .select("home_address, home_lat, home_lng")
         .eq("user_id", user.id)
         .maybeSingle();
       
       if (data?.home_address) {
         setHomeAddress(data.home_address);
+        const d = data as any;
+        if (d.home_lat != null && d.home_lng != null) {
+          setHomeCoords({ lat: d.home_lat, lng: d.home_lng });
+        }
       }
     };
     
