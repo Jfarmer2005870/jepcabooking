@@ -1,136 +1,220 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, MapPin, CalendarCheck, Sparkles, ChevronRight } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 
-const STORAGE_KEY = "jepca_onboarding_seen_v1";
+const STORAGE_KEY = "jepca_onboarding_seen_v2";
 
-const slides = [
+type Step = {
+  target?: string; // data-tour attribute value
+  title: string;
+  desc: string;
+  placement?: "top" | "bottom" | "auto";
+};
+
+const steps: Step[] = [
   {
-    icon: Search,
-    title: "Find a local pro",
-    desc: "Browse categories or search for the exact service you need — cleaning, plumbing, lawn, and more.",
+    title: "Welcome to Jepca",
+    desc: "A quick 4-step tour so you know exactly how to book a local pro.",
   },
   {
-    icon: MapPin,
+    target: "search",
+    title: "Search for a service",
+    desc: "Type what you need — cleaning, plumbing, lawn care, anything.",
+    placement: "bottom",
+  },
+  {
+    target: "address",
     title: "Set your address",
-    desc: "Tell us where the work happens. We use it to match you with nearby pros and calculate travel.",
+    desc: "We use it to match nearby pros and calculate travel fees.",
+    placement: "bottom",
   },
   {
-    icon: CalendarCheck,
-    title: "Book a 30-min slot",
-    desc: "Pick a day and a 30-minute window between 8am and 6pm. Pay securely in the app.",
+    target: "categories",
+    title: "Or browse by category",
+    desc: "Tap any category to jump straight to available pros.",
+    placement: "top",
   },
   {
-    icon: Sparkles,
-    title: "Track, chat & review",
-    desc: "Message your pro, get notified at every step, and rate them when the job is done.",
+    target: "tab-orders",
+    title: "Track your bookings",
+    desc: "Open Orders any time to see status, chat, and invoices.",
+    placement: "top",
   },
 ];
+
+type Rect = { top: number; left: number; width: number; height: number };
+
+const PADDING = 8;
+
+const getRect = (sel: string): Rect | null => {
+  const el = document.querySelector(`[data-tour="${sel}"]`) as HTMLElement | null;
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { top: r.top - PADDING, left: r.left - PADDING, width: r.width + PADDING * 2, height: r.height + PADDING * 2 };
+};
 
 const OnboardingGuide = () => {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
+  const [rect, setRect] = useState<Rect | null>(null);
 
   useEffect(() => {
     try {
-      const seen = localStorage.getItem(STORAGE_KEY);
-      if (!seen) {
-        // Wait for splash to finish (~1s) before showing
+      if (!localStorage.getItem(STORAGE_KEY)) {
         const t = setTimeout(() => setOpen(true), 1100);
         return () => clearTimeout(t);
       }
     } catch {}
   }, []);
 
+  const current = steps[step];
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const update = () => {
+      if (!current.target) {
+        setRect(null);
+        return;
+      }
+      const r = getRect(current.target);
+      setRect(r);
+      if (r) {
+        const el = document.querySelector(`[data-tour="${current.target}"]`) as HTMLElement | null;
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    };
+    update();
+    const id = window.setTimeout(update, 350);
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open, step, current.target]);
+
   const finish = () => {
     try { localStorage.setItem(STORAGE_KEY, "1"); } catch {}
     setOpen(false);
   };
 
-  const next = () => {
-    if (step < slides.length - 1) setStep(step + 1);
-    else finish();
-  };
+  const next = () => (step < steps.length - 1 ? setStep(step + 1) : finish());
+  const back = () => step > 0 && setStep(step - 1);
 
   if (!open) return null;
-  const Slide = slides[step];
-  const Icon = Slide.icon;
 
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] bg-background flex flex-col"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Welcome to Jepca"
-      >
-        {/* Skip */}
-        <div className="flex justify-end p-4">
-          <button
-            onClick={finish}
-            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Skip
-          </button>
-        </div>
+  // Tooltip placement
+  const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
+  const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+  const tipWidth = Math.min(340, vw - 24);
+  let tipTop = vh / 2 - 80;
+  let tipLeft = vw / 2 - tipWidth / 2;
 
-        {/* Slide content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.3 }}
-              className="flex flex-col items-center max-w-sm"
-            >
-              <div className="w-24 h-24 rounded-3xl gradient-primary flex items-center justify-center shadow-glow-primary mb-8">
-                <Icon className="w-11 h-11 text-primary-foreground" />
-              </div>
-              <h2 className="text-3xl font-bold font-display text-foreground mb-3">
-                {Slide.title}
-              </h2>
-              <p className="text-base text-muted-foreground leading-relaxed">
-                {Slide.desc}
-              </p>
-            </motion.div>
-          </AnimatePresence>
-        </div>
+  if (rect) {
+    const placement = current.placement === "top"
+      ? "top"
+      : current.placement === "bottom"
+      ? "bottom"
+      : rect.top > vh / 2 ? "top" : "bottom";
+    if (placement === "bottom") tipTop = Math.min(rect.top + rect.height + 12, vh - 220);
+    else tipTop = Math.max(12, rect.top - 200);
+    tipLeft = Math.min(Math.max(12, rect.left + rect.width / 2 - tipWidth / 2), vw - tipWidth - 12);
+  }
 
-        {/* Dots */}
-        <div className="flex items-center justify-center gap-2 pb-6">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setStep(i)}
-              aria-label={`Go to step ${i + 1}`}
-              className={`h-2 rounded-full transition-all ${
-                i === step ? "w-8 bg-primary" : "w-2 bg-border"
-              }`}
-            />
-          ))}
-        </div>
-
-        {/* Action */}
-        <div className="px-6 pb-[calc(env(safe-area-inset-bottom)+24px)]">
-          <button
-            onClick={next}
-            className="w-full h-14 rounded-2xl bg-primary text-primary-foreground font-semibold text-base shadow-glow-primary hover:opacity-95 transition-opacity flex items-center justify-center gap-2"
-          >
-            {step < slides.length - 1 ? (
-              <>Next <ChevronRight className="w-5 h-5" /></>
-            ) : (
-              "Get started"
+  const overlay = (
+    <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="App tour">
+      {/* SVG mask creates spotlight cutout */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-auto" onClick={finish}>
+        <defs>
+          <mask id="tour-mask">
+            <rect width="100%" height="100%" fill="white" />
+            {rect && (
+              <rect
+                x={rect.left}
+                y={rect.top}
+                width={rect.width}
+                height={rect.height}
+                rx={16}
+                ry={16}
+                fill="black"
+              />
             )}
-          </button>
-        </div>
-      </motion.div>
-    </AnimatePresence>
+          </mask>
+        </defs>
+        <rect width="100%" height="100%" fill="rgba(10,20,30,0.65)" mask="url(#tour-mask)" />
+      </svg>
+
+      {/* Highlight ring around target */}
+      {rect && (
+        <motion.div
+          layout
+          initial={false}
+          animate={{ top: rect.top, left: rect.left, width: rect.width, height: rect.height }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className="absolute pointer-events-none rounded-2xl ring-2 ring-primary shadow-glow-primary"
+        />
+      )}
+
+      {/* Tooltip card */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, y: 8, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -8, scale: 0.98 }}
+          transition={{ duration: 0.2 }}
+          style={{ top: tipTop, left: tipLeft, width: tipWidth }}
+          className="absolute bg-card text-card-foreground rounded-2xl shadow-strong border border-border p-5"
+        >
+          <div className="flex items-start justify-between gap-2 mb-2">
+            <div className="text-xs font-semibold text-primary uppercase tracking-wide">
+              Step {step + 1} of {steps.length}
+            </div>
+            <button
+              onClick={finish}
+              aria-label="Close tour"
+              className="text-muted-foreground hover:text-foreground -mt-1 -mr-1 p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <h3 className="text-lg font-bold font-display mb-1">{current.title}</h3>
+          <p className="text-sm text-muted-foreground mb-4">{current.desc}</p>
+
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex gap-1.5">
+              {steps.map((_, i) => (
+                <span
+                  key={i}
+                  className={`h-1.5 rounded-full transition-all ${i === step ? "w-5 bg-primary" : "w-1.5 bg-border"}`}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              {step > 0 && (
+                <button
+                  onClick={back}
+                  className="h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground"
+                >
+                  Back
+                </button>
+              )}
+              <button
+                onClick={next}
+                className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex items-center gap-1 hover:opacity-95"
+              >
+                {step < steps.length - 1 ? (<>Next <ChevronRight className="w-4 h-4" /></>) : "Done"}
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
   );
+
+  return createPortal(overlay, document.body);
 };
 
 export default OnboardingGuide;
