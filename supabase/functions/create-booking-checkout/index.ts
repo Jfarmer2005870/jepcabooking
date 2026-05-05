@@ -68,6 +68,7 @@ serve(async (req) => {
     }
 
     // Distance-based travel fee (haversine, miles)
+    // Keep this in sync with src/lib/distance.ts so UI breakdown == checkout total.
     let travelDistanceMiles: number | null = null;
     let travelFee = 0;
     const oLat = businessProfile.origin_lat;
@@ -82,8 +83,9 @@ serve(async (req) => {
       const h =
         Math.sin(dLat / 2) ** 2 +
         Math.cos(toRad(oLat)) * Math.cos(toRad(service_lat)) * Math.sin(dLng / 2) ** 2;
-      travelDistanceMiles = 2 * R * Math.asin(Math.sqrt(h));
-      const billable = Math.max(0, travelDistanceMiles - freeRadius);
+      const raw = 2 * R * Math.asin(Math.sqrt(h));
+      travelDistanceMiles = Math.round(raw * 10) / 10; // round to 0.1 mi
+      const billable = Math.max(0, Math.round((travelDistanceMiles - freeRadius) * 10) / 10);
       travelFee = Math.round(billable * perMile * 100) / 100;
     }
 
