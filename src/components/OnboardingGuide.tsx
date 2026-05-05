@@ -65,6 +65,8 @@ const OnboardingGuide = () => {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const [ready, setReady] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     try {
@@ -81,6 +83,7 @@ const OnboardingGuide = () => {
     if (!open) return;
     setReady(false);
     setRect(null);
+    setTimedOut(false);
 
     if (!current.target) {
       setReady(true);
@@ -109,8 +112,9 @@ const OnboardingGuide = () => {
         }
       }
       if (performance.now() - start > TIMEOUT) {
+        // Timed out — surface Retry UI instead of forcing the tooltip
         setRect(r);
-        setReady(true);
+        setTimedOut(true);
         return;
       }
       rafId = requestAnimationFrame(tick);
@@ -131,7 +135,7 @@ const OnboardingGuide = () => {
       window.removeEventListener("resize", sync);
       window.removeEventListener("scroll", sync, true);
     };
-  }, [open, step, current.target]);
+  }, [open, step, current.target, retryNonce]);
 
   const finish = () => {
     try { localStorage.setItem(STORAGE_KEY, "1"); } catch {}
@@ -140,6 +144,8 @@ const OnboardingGuide = () => {
 
   const next = () => (step < steps.length - 1 ? setStep(step + 1) : finish());
   const back = () => step > 0 && setStep(step - 1);
+  const retry = () => setRetryNonce((n) => n + 1);
+  const skipStep = () => next();
 
   if (!open) return null;
 
@@ -196,7 +202,7 @@ const OnboardingGuide = () => {
       )}
 
       {/* Loading indicator while waiting for target to scroll into view */}
-      {!ready && (
+      {!ready && !timedOut && (
         <div
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 px-4 py-3 rounded-full bg-card border border-border shadow-strong"
           role="status"
@@ -204,6 +210,39 @@ const OnboardingGuide = () => {
         >
           <span className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           <span className="text-sm font-medium text-foreground">Locating…</span>
+        </div>
+      )}
+
+      {/* Timed out — Retry / Skip / Close */}
+      {!ready && timedOut && (
+        <div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] max-w-[calc(100vw-24px)] bg-card text-card-foreground rounded-2xl shadow-strong border border-border p-5 text-center"
+          role="alert"
+        >
+          <h3 className="text-base font-bold font-display mb-1">Couldn't find that yet</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            We couldn't locate the highlighted spot. Try again or skip this step.
+          </p>
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={finish}
+              className="h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              Close
+            </button>
+            <button
+              onClick={skipStep}
+              className="h-9 px-3 rounded-lg text-sm font-medium border border-border hover:bg-secondary"
+            >
+              Skip step
+            </button>
+            <button
+              onClick={retry}
+              className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:opacity-95"
+            >
+              Retry
+            </button>
+          </div>
         </div>
       )}
 
