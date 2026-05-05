@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import ChatDialog from "@/components/chat/ChatDialog";
 import ServiceReviews from "@/components/reviews/ServiceReviews";
 import PinDropAddress from "@/components/maps/PinDropAddress";
+import { haversineMiles, calcTravelFee } from "@/lib/distance";
 import { 
   MapPin, 
   Star, 
@@ -150,7 +151,11 @@ const ServiceDetail = () => {
             rating,
             total_reviews,
             is_verified,
-            service_area
+            service_area,
+            origin_lat,
+            origin_lng,
+            free_radius_miles,
+            per_mile_rate
           )
         `)
         .eq("id", id)
