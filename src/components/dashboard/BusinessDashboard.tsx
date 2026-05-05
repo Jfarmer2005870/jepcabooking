@@ -54,6 +54,12 @@ interface Booking {
   service_address: string | null;
   notes: string | null;
   total_price: number | null;
+  platform_fee: number | null;
+  travel_fee: number | null;
+  travel_distance_miles: number | null;
+  business_signature: string | null;
+  business_signature_at: string | null;
+  business_signature_name: string | null;
   created_at: string;
   services: {
     title: string;
