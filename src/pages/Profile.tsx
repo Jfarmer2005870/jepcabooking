@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { User, Building2, Save, Loader2 } from "lucide-react";
 import { profileSchema, businessProfileSchema, validateForm } from "@/lib/validations";
 import PaymentMethods from "@/components/profile/PaymentMethods";
+import PinDropAddress from "@/components/maps/PinDropAddress";
 
 interface ProfileData {
   full_name: string;
