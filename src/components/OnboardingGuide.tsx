@@ -219,10 +219,15 @@ const OnboardingGuide = () => {
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] max-w-[calc(100vw-24px)] bg-card text-card-foreground rounded-2xl shadow-strong border border-border p-5 text-center"
           role="alert"
         >
-          <h3 className="text-base font-bold font-display mb-1">Couldn't find that yet</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            We couldn't locate the highlighted spot. Try again or skip this step.
+          <h3 className="text-base font-bold font-display mb-1">Can't find that spot yet</h3>
+          <p className="text-sm text-muted-foreground mb-3">
+            Try scrolling the page manually until the area you want highlighted is visible on screen, then tap Retry.
           </p>
+          <ol className="text-xs text-muted-foreground text-left mb-4 space-y-1 pl-4 list-decimal">
+            <li>Close this dialog or scroll behind it.</li>
+            <li>Bring the relevant section into view.</li>
+            <li>Tap <span className="font-semibold text-foreground">Retry</span> below.</li>
+          </ol>
           <div className="flex items-center justify-center gap-2">
             <button
               onClick={finish}
