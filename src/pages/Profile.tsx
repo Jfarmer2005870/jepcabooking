@@ -550,6 +550,26 @@ const Profile = () => {
 
             {userRole === "consumer" && <PaymentMethods />}
 
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">App tour</CardTitle>
+                <CardDescription>Re-run the welcome guide anytime.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    try { localStorage.removeItem("jepca_onboarding_seen_v3"); } catch {}
+                    navigate("/");
+                    setTimeout(() => window.dispatchEvent(new CustomEvent("jepca:start-onboarding")), 350);
+                  }}
+                >
+                  Show app tour again
+                </Button>
+              </CardContent>
+            </Card>
+
             <div className="flex justify-end pt-4">
               <Button 
                 type="button"
