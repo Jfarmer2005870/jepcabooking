@@ -20,11 +20,13 @@ import {
   MapPin,
   CreditCard,
   ExternalLink,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AddServiceDialog from "./AddServiceDialog";
 import AISummarizeNotes from "./AISummarizeNotes";
+import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
 
 interface BusinessProfile {
   id: string;
