@@ -18,6 +18,9 @@ export type Database = {
         Row: {
           auto_cancel_at: string | null
           business_id: string
+          business_signature: string | null
+          business_signature_at: string | null
+          business_signature_name: string | null
           consumer_id: string
           created_at: string
           dispute_status: string | null
@@ -42,6 +45,9 @@ export type Database = {
         Insert: {
           auto_cancel_at?: string | null
           business_id: string
+          business_signature?: string | null
+          business_signature_at?: string | null
+          business_signature_name?: string | null
           consumer_id: string
           created_at?: string
           dispute_status?: string | null
@@ -66,6 +72,9 @@ export type Database = {
         Update: {
           auto_cancel_at?: string | null
           business_id?: string
+          business_signature?: string | null
+          business_signature_at?: string | null
+          business_signature_name?: string | null
           consumer_id?: string
           created_at?: string
           dispute_status?: string | null
