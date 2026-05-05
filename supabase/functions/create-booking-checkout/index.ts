@@ -42,10 +42,10 @@ serve(async (req) => {
 
     if (!service_id) throw new Error("Service ID is required");
 
-    // Get service and business info
+    // Get service and business info (incl. travel pricing + origin)
     const { data: service, error: serviceError } = await supabaseClient
       .from("services")
-      .select("*, business_profiles(id, stripe_account_id, business_name)")
+      .select("*, business_profiles(id, stripe_account_id, business_name, origin_lat, origin_lng, free_radius_miles, per_mile_rate)")
       .eq("id", service_id)
       .maybeSingle();
 
@@ -67,9 +67,29 @@ serve(async (req) => {
       servicePrice = baseRate;
     }
 
-    const servicePriceCents = Math.round(servicePrice * 100);
-    const platformFeeCents = Math.round(servicePriceCents * PLATFORM_FEE_PERCENT / 100);
-    const totalCents = servicePriceCents + platformFeeCents;
+    // Distance-based travel fee (haversine, miles)
+    let travelDistanceMiles: number | null = null;
+    let travelFee = 0;
+    const oLat = businessProfile.origin_lat;
+    const oLng = businessProfile.origin_lng;
+    const freeRadius = Number(businessProfile.free_radius_miles ?? 10);
+    const perMile = Number(businessProfile.per_mile_rate ?? 0);
+    if (oLat != null && oLng != null && service_lat != null && service_lng != null) {
+      const toRad = (d: number) => (d * Math.PI) / 180;
+      const R = 3958.7613;
+      const dLat = toRad(service_lat - oLat);
+      const dLng = toRad(service_lng - oLng);
+      const h =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(oLat)) * Math.cos(toRad(service_lat)) * Math.sin(dLng / 2) ** 2;
+      travelDistanceMiles = 2 * R * Math.asin(Math.sqrt(h));
+      const billable = Math.max(0, travelDistanceMiles - freeRadius);
+      travelFee = Math.round(billable * perMile * 100) / 100;
+    }
+
+    const subtotalCents = Math.round((servicePrice + travelFee) * 100);
+    const platformFeeCents = Math.round(subtotalCents * PLATFORM_FEE_PERCENT / 100);
+    const totalCents = subtotalCents + platformFeeCents;
 
     // Check/create Stripe customer
     const customers = await stripe.customers.list({ email: user.email!, limit: 1 });
@@ -90,6 +110,8 @@ serve(async (req) => {
         service_address,
         service_lat: service_lat ?? null,
         service_lng: service_lng ?? null,
+        travel_distance_miles: travelDistanceMiles,
+        travel_fee: travelFee,
         notes: notes || null,
         total_price: totalCents / 100,
         platform_fee: platformFeeCents / 100,

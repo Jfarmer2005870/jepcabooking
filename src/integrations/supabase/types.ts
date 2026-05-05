@@ -35,6 +35,8 @@ export type Database = {
           service_lng: number | null
           status: Database["public"]["Enums"]["booking_status"]
           total_price: number | null
+          travel_distance_miles: number | null
+          travel_fee: number
           updated_at: string
         }
         Insert: {
@@ -57,6 +59,8 @@ export type Database = {
           service_lng?: number | null
           status?: Database["public"]["Enums"]["booking_status"]
           total_price?: number | null
+          travel_distance_miles?: number | null
+          travel_fee?: number
           updated_at?: string
         }
         Update: {
@@ -79,6 +83,8 @@ export type Database = {
           service_lng?: number | null
           status?: Database["public"]["Enums"]["booking_status"]
           total_price?: number | null
+          travel_distance_miles?: number | null
+          travel_fee?: number
           updated_at?: string
         }
         Relationships: [
@@ -105,9 +111,13 @@ export type Database = {
           city: string | null
           created_at: string
           description: string | null
+          free_radius_miles: number
           id: string
           is_verified: boolean | null
           logo_url: string | null
+          origin_lat: number | null
+          origin_lng: number | null
+          per_mile_rate: number
           rating: number | null
           service_area: string | null
           state: string | null
@@ -124,9 +134,13 @@ export type Database = {
           city?: string | null
           created_at?: string
           description?: string | null
+          free_radius_miles?: number
           id?: string
           is_verified?: boolean | null
           logo_url?: string | null
+          origin_lat?: number | null
+          origin_lng?: number | null
+          per_mile_rate?: number
           rating?: number | null
           service_area?: string | null
           state?: string | null
@@ -143,9 +157,13 @@ export type Database = {
           city?: string | null
           created_at?: string
           description?: string | null
+          free_radius_miles?: number
           id?: string
           is_verified?: boolean | null
           logo_url?: string | null
+          origin_lat?: number | null
+          origin_lng?: number | null
+          per_mile_rate?: number
           rating?: number | null
           service_area?: string | null
           state?: string | null
