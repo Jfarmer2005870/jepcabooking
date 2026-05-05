@@ -65,6 +65,8 @@ const OnboardingGuide = () => {
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const [ready, setReady] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     try {
@@ -81,6 +83,7 @@ const OnboardingGuide = () => {
     if (!open) return;
     setReady(false);
     setRect(null);
+    setTimedOut(false);
 
     if (!current.target) {
       setReady(true);
@@ -109,8 +112,9 @@ const OnboardingGuide = () => {
         }
       }
       if (performance.now() - start > TIMEOUT) {
+        // Timed out — surface Retry UI instead of forcing the tooltip
         setRect(r);
-        setReady(true);
+        setTimedOut(true);
         return;
       }
       rafId = requestAnimationFrame(tick);
@@ -131,7 +135,7 @@ const OnboardingGuide = () => {
       window.removeEventListener("resize", sync);
       window.removeEventListener("scroll", sync, true);
     };
-  }, [open, step, current.target]);
+  }, [open, step, current.target, retryNonce]);
 
   const finish = () => {
     try { localStorage.setItem(STORAGE_KEY, "1"); } catch {}
@@ -140,6 +144,8 @@ const OnboardingGuide = () => {
 
   const next = () => (step < steps.length - 1 ? setStep(step + 1) : finish());
   const back = () => step > 0 && setStep(step - 1);
+  const retry = () => setRetryNonce((n) => n + 1);
+  const skipStep = () => next();
 
   if (!open) return null;
 
