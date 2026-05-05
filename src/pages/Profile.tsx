@@ -21,6 +21,8 @@ interface ProfileData {
   bio: string;
   avatar_url: string;
   home_address: string;
+  home_lat: number | null;
+  home_lng: number | null;
 }
 
 interface BusinessProfileData {
@@ -48,6 +50,8 @@ const Profile = () => {
     bio: "",
     avatar_url: "",
     home_address: "",
+    home_lat: null,
+    home_lng: null,
   });
   const [businessProfile, setBusinessProfile] = useState<BusinessProfileData>({
     business_name: "",
@@ -90,6 +94,8 @@ const Profile = () => {
             bio: profileData.bio || "",
             avatar_url: profileData.avatar_url || "",
             home_address: profileData.home_address || "",
+            home_lat: (profileData as any).home_lat ?? null,
+            home_lng: (profileData as any).home_lng ?? null,
           });
         }
 
@@ -182,7 +188,9 @@ const Profile = () => {
           bio: profile.bio || null,
           avatar_url: profile.avatar_url || null,
           home_address: profile.home_address || null,
-        })
+          home_lat: profile.home_lat,
+          home_lng: profile.home_lng,
+        } as any)
         .eq("user_id", user.id);
 
       if (profileError) throw profileError;
@@ -320,7 +328,13 @@ const Profile = () => {
                     <Label>Home Address</Label>
                     <PinDropAddress
                       value={profile.home_address}
-                      onChange={(addr) => setProfile({ ...profile, home_address: addr })}
+                      initialCoords={profile.home_lat != null && profile.home_lng != null ? { lat: profile.home_lat, lng: profile.home_lng } : undefined}
+                      onChange={(addr, coords) => setProfile({
+                        ...profile,
+                        home_address: addr,
+                        home_lat: coords?.lat ?? profile.home_lat,
+                        home_lng: coords?.lng ?? profile.home_lng,
+                      })}
                     />
                     <p className="text-xs text-muted-foreground">
                       Drop a pin or search to save your home address for faster booking

@@ -1,0 +1,2 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS home_lat double precision, ADD COLUMN IF NOT EXISTS home_lng double precision;
+ALTER TABLE public.bookings ADD COLUMN IF NOT EXISTS service_lat double precision, ADD COLUMN IF NOT EXISTS service_lng double precision;

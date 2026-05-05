@@ -31,6 +31,8 @@ export type Database = {
           scheduled_time: string | null
           service_address: string | null
           service_id: string
+          service_lat: number | null
+          service_lng: number | null
           status: Database["public"]["Enums"]["booking_status"]
           total_price: number | null
           updated_at: string
@@ -51,6 +53,8 @@ export type Database = {
           scheduled_time?: string | null
           service_address?: string | null
           service_id: string
+          service_lat?: number | null
+          service_lng?: number | null
           status?: Database["public"]["Enums"]["booking_status"]
           total_price?: number | null
           updated_at?: string
@@ -71,6 +75,8 @@ export type Database = {
           scheduled_time?: string | null
           service_address?: string | null
           service_id?: string
+          service_lat?: number | null
+          service_lng?: number | null
           status?: Database["public"]["Enums"]["booking_status"]
           total_price?: number | null
           updated_at?: string
@@ -357,6 +363,8 @@ export type Database = {
           email: string
           full_name: string | null
           home_address: string | null
+          home_lat: number | null
+          home_lng: number | null
           id: string
           phone: string | null
           stripe_customer_id: string | null
@@ -370,6 +378,8 @@ export type Database = {
           email: string
           full_name?: string | null
           home_address?: string | null
+          home_lat?: number | null
+          home_lng?: number | null
           id?: string
           phone?: string | null
           stripe_customer_id?: string | null
@@ -383,6 +393,8 @@ export type Database = {
           email?: string
           full_name?: string | null
           home_address?: string | null
+          home_lat?: number | null
+          home_lng?: number | null
           id?: string
           phone?: string | null
           stripe_customer_id?: string | null
