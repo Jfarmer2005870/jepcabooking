@@ -244,16 +244,26 @@ const ConsumerDashboard = () => {
                     <span className="text-muted-foreground">
                       {new Date(booking.created_at).toLocaleDateString()}
                     </span>
-                    {booking.status === "completed" && (
+                    <div className="flex gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setReviewBooking(booking)}
+                        onClick={() => setInvoiceBooking(booking)}
                       >
-                        <Star className="w-4 h-4 mr-1" />
-                        Leave Review
+                        <FileText className="w-4 h-4 mr-1" />
+                        Invoice
                       </Button>
-                    )}
+                      {booking.status === "completed" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setReviewBooking(booking)}
+                        >
+                          <Star className="w-4 h-4 mr-1" />
+                          Review
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
