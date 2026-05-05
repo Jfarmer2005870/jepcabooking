@@ -285,6 +285,12 @@ const ConsumerDashboard = () => {
           }}
         />
       )}
+
+      <InvoiceDialog
+        open={!!invoiceBooking}
+        onOpenChange={(open) => !open && setInvoiceBooking(null)}
+        booking={invoiceBooking as unknown as InvoiceBooking}
+      />
     </div>
   );
 };
