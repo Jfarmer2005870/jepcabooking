@@ -30,7 +30,7 @@ const tileClass = "w-16 h-16 rounded-2xl bg-secondary text-primary flex items-ce
 
 const ServiceCategories = () => {
   return (
-    <section id="services" className="py-6 md:py-10 bg-background">
+    <section id="services" data-tour="categories" className="py-6 md:py-10 bg-background">
       <div className="container mx-auto px-4">
         <div className="flex items-end justify-between mb-4 md:mb-6">
           <h2 className="text-xl md:text-2xl font-bold font-display text-foreground">

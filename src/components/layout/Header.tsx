@@ -190,6 +190,7 @@ const Header = forwardRef<HTMLElement>((props, ref) => {
               <Link
                 key={t.label}
                 to={t.path}
+                data-tour={`tab-${t.label.toLowerCase()}`}
                 className={`flex flex-col items-center justify-center gap-1 py-2.5 ${active ? "text-primary" : "text-muted-foreground"}`}
               >
                 <t.icon className="w-5 h-5" />
