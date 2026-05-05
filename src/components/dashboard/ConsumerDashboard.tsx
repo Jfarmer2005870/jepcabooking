@@ -5,8 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Search, MapPin, Star, ArrowRight } from "lucide-react";
+import { Calendar, Clock, Search, MapPin, Star, ArrowRight, FileText } from "lucide-react";
 import LeaveReviewDialog from "./LeaveReviewDialog";
+import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
 
 interface Booking {
   id: string;
@@ -14,8 +15,15 @@ interface Booking {
   status: string;
   scheduled_date: string | null;
   scheduled_time: string | null;
+  service_address: string | null;
   notes: string | null;
   total_price: number | null;
+  platform_fee: number | null;
+  travel_fee: number | null;
+  travel_distance_miles: number | null;
+  business_signature: string | null;
+  business_signature_at: string | null;
+  business_signature_name: string | null;
   created_at: string;
   services: {
     title: string;
@@ -26,6 +34,7 @@ interface Booking {
     city: string | null;
     state: string | null;
   };
+  profiles?: { full_name: string | null; email: string } | null;
 }
 
 const statusColors: Record<string, string> = {
@@ -49,6 +58,7 @@ const ConsumerDashboard = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
+  const [invoiceBooking, setInvoiceBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -234,16 +244,26 @@ const ConsumerDashboard = () => {
                     <span className="text-muted-foreground">
                       {new Date(booking.created_at).toLocaleDateString()}
                     </span>
-                    {booking.status === "completed" && (
+                    <div className="flex gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setReviewBooking(booking)}
+                        onClick={() => setInvoiceBooking(booking)}
                       >
-                        <Star className="w-4 h-4 mr-1" />
-                        Leave Review
+                        <FileText className="w-4 h-4 mr-1" />
+                        Invoice
                       </Button>
-                    )}
+                      {booking.status === "completed" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setReviewBooking(booking)}
+                        >
+                          <Star className="w-4 h-4 mr-1" />
+                          Review
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -265,6 +285,12 @@ const ConsumerDashboard = () => {
           }}
         />
       )}
+
+      <InvoiceDialog
+        open={!!invoiceBooking}
+        onOpenChange={(open) => !open && setInvoiceBooking(null)}
+        booking={invoiceBooking as unknown as InvoiceBooking}
+      />
     </div>
   );
 };

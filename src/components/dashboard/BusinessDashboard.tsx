@@ -20,11 +20,13 @@ import {
   MapPin,
   CreditCard,
   ExternalLink,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import AddServiceDialog from "./AddServiceDialog";
 import AISummarizeNotes from "./AISummarizeNotes";
+import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
 
 interface BusinessProfile {
   id: string;
@@ -52,6 +54,12 @@ interface Booking {
   service_address: string | null;
   notes: string | null;
   total_price: number | null;
+  platform_fee: number | null;
+  travel_fee: number | null;
+  travel_distance_miles: number | null;
+  business_signature: string | null;
+  business_signature_at: string | null;
+  business_signature_name: string | null;
   created_at: string;
   services: {
     title: string;
@@ -89,6 +97,7 @@ const BusinessDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState<string | null>(null);
+  const [invoiceBooking, setInvoiceBooking] = useState<Booking | null>(null);
   const [stripeStatus, setStripeStatus] = useState<{
     connected: boolean;
     charges_enabled?: boolean;
@@ -705,6 +714,14 @@ const BusinessDashboard = () => {
                         Mark Complete
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setInvoiceBooking(booking)}
+                    >
+                      <FileText className="w-4 h-4 mr-1" />
+                      {booking.business_signature ? "View Invoice" : "Sign Invoice"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -718,6 +735,17 @@ const BusinessDashboard = () => {
         onOpenChange={setIsAddServiceOpen}
         businessId={businessProfile?.id || ""}
         onServiceAdded={fetchBusinessData}
+      />
+
+      <InvoiceDialog
+        open={!!invoiceBooking}
+        onOpenChange={(open) => !open && setInvoiceBooking(null)}
+        booking={invoiceBooking as unknown as InvoiceBooking}
+        canSign
+        onSigned={() => {
+          fetchBusinessData();
+          setInvoiceBooking(null);
+        }}
       />
     </div>
   );
