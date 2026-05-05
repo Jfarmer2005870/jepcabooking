@@ -1,122 +1,106 @@
 import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Search, MapPin, ArrowRight } from "lucide-react";
-import heroPattern from "@/assets/hero-pattern.jpg";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, MapPin, Clock, ChevronRight } from "lucide-react";
+import { useState } from "react";
+
+const quickFilters = [
+  { label: "Available now", icon: Clock },
+  { label: "Top rated" },
+  { label: "Under $50" },
+  { label: "Same day" },
+  { label: "Verified pros" },
+];
 
 const HeroSection = () => {
-  const popularServices = [
-    "Plumbing",
-    "HVAC",
-    "Landscaping",
-    "Cleaning",
-    "Electrical",
-    "Auto Repair",
-  ];
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [location, setLocation] = useState("");
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (location) params.set("loc", location);
+    navigate(`/services${params.toString() ? `?${params.toString()}` : ""}`);
+  };
 
   return (
-    <section className="relative min-h-screen pt-20 overflow-hidden">
-      {/* Hero Background Image */}
-      <div className="absolute inset-0 z-0">
-        <img 
-          src={heroPattern} 
-          alt="" 
-          className="w-full h-full object-cover opacity-15"
-        />
-        <div className="absolute inset-0 gradient-hero" />
-      </div>
-      {/* Background Decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 left-10 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-      </div>
+    <section className="relative pt-24 md:pt-28 pb-6 md:pb-10 bg-background">
+      <div className="container mx-auto px-4">
+        {/* Address pill (app-style) */}
+        <button
+          onClick={() => navigate("/profile")}
+          className="md:hidden flex items-center gap-2 mb-4 text-sm font-semibold text-foreground"
+          aria-label="Change delivery address"
+        >
+          <MapPin className="w-4 h-4 text-primary" />
+          <span className="truncate max-w-[200px]">Set your address</span>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </button>
 
-      <div className="container mx-auto px-4 py-16 md:py-24 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full gradient-glass border border-border/50 shadow-soft mb-8"
-          >
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse-soft" />
-            <span className="text-sm font-medium text-muted-foreground">
-              Your local service marketplace
-            </span>
-          </motion.div>
+        {/* Headline — compact, app-feel */}
+        <motion.h1
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="text-3xl md:text-5xl font-bold font-display leading-tight mb-2"
+        >
+          What do you need today?
+        </motion.h1>
+        <p className="text-muted-foreground mb-6 md:mb-8">
+          Book a verified local pro in minutes.
+        </p>
 
-          {/* Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-4xl md:text-6xl lg:text-7xl font-bold font-display text-foreground leading-tight mb-6"
+        {/* Search bar — single rounded input row, like an app search */}
+        <motion.form
+          onSubmit={handleSearch}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.05 }}
+          className="flex flex-col md:flex-row gap-2 mb-5"
+        >
+          <div className="flex-1 flex items-center gap-3 px-4 h-14 bg-card rounded-2xl border border-border shadow-soft focus-within:ring-2 focus-within:ring-primary/30">
+            <Search className="w-5 h-5 text-muted-foreground shrink-0" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              type="text"
+              placeholder="Search services or pros"
+              className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+          <div className="hidden md:flex items-center gap-3 px-4 h-14 bg-card rounded-2xl border border-border shadow-soft md:w-64 focus-within:ring-2 focus-within:ring-primary/30">
+            <MapPin className="w-5 h-5 text-muted-foreground shrink-0" />
+            <input
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              type="text"
+              placeholder="Address or ZIP"
+              className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+          <button
+            type="submit"
+            className="h-14 px-6 rounded-2xl bg-primary text-primary-foreground font-semibold shadow-glow-primary hover:opacity-95 transition-opacity"
           >
-            Book Local Services{" "}
-            <span className="text-gradient-primary">In Minutes</span>
-          </motion.h1>
+            Search
+          </button>
+        </motion.form>
 
-          {/* Subheadline */}
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
-          >
-            Connect with verified local professionals for any job. From plumbing to landscaping,
-            get instant quotes and book with confidence.
-          </motion.p>
-
-          {/* Search Bar */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="max-w-2xl mx-auto mb-8"
-          >
-            <div className="flex flex-col md:flex-row gap-3 p-3 bg-card rounded-2xl shadow-medium border border-border/50">
-              <div className="flex-1 flex items-center gap-3 px-4 py-3 bg-secondary/50 rounded-xl">
-                <Search className="w-5 h-5 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="What service do you need?"
-                  className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
-                />
-              </div>
-              <div className="flex items-center gap-3 px-4 py-3 bg-secondary/50 rounded-xl md:w-48">
-                <MapPin className="w-5 h-5 text-muted-foreground" />
-                <input
-                  type="text"
-                  placeholder="Location"
-                  className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
-                />
-              </div>
-              <Button size="lg" className="md:px-8">
-                Search
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
-          </motion.div>
-
-          {/* Popular Services */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-wrap justify-center gap-2"
-          >
-            <span className="text-sm text-muted-foreground">Popular:</span>
-            {popularServices.map((service) => (
+        {/* Filter chips — horizontally scrollable, app-style */}
+        <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 pb-1 w-max">
+            {quickFilters.map((f) => (
               <button
-                key={service}
-                className="px-3 py-1 text-sm rounded-full bg-secondary hover:bg-secondary/80 text-secondary-foreground transition-colors"
+                key={f.label}
+                className="flex items-center gap-1.5 px-4 h-10 rounded-full bg-card border border-border text-sm font-medium text-foreground hover:border-primary hover:text-primary transition-colors whitespace-nowrap"
               >
-                {service}
+                {f.icon ? <f.icon className="w-4 h-4" /> : null}
+                {f.label}
               </button>
             ))}
-          </motion.div>
+          </div>
         </div>
-
       </div>
     </section>
   );
