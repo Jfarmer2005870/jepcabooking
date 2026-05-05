@@ -50,7 +50,7 @@ const ServiceCategories = () => {
                 to={`/services?category=${c.slug}`}
                 className="flex flex-col items-center gap-2 w-20"
               >
-                <div className={`w-16 h-16 rounded-2xl ${c.tint} flex items-center justify-center`}>
+                <div className={tileClass}>
                   <c.icon className="w-7 h-7" />
                 </div>
                 <span className="text-xs font-medium text-foreground text-center leading-tight">
@@ -74,7 +74,7 @@ const ServiceCategories = () => {
                 to={`/services?category=${c.slug}`}
                 className="group flex flex-col items-center gap-2 p-3 rounded-2xl hover:bg-secondary transition-colors"
               >
-                <div className={`w-16 h-16 rounded-2xl ${c.tint} flex items-center justify-center group-hover:scale-105 transition-transform`}>
+                <div className={`${tileClass} group-hover:scale-105 transition-transform`}>
                   <c.icon className="w-7 h-7" />
                 </div>
                 <span className="text-sm font-medium text-foreground text-center">
