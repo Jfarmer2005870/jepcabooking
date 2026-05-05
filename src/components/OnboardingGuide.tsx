@@ -195,60 +195,75 @@ const OnboardingGuide = () => {
         />
       )}
 
-      {/* Tooltip card */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, y: 8, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -8, scale: 0.98 }}
-          transition={{ duration: 0.2 }}
-          style={{ top: tipTop, left: tipLeft, width: tipWidth }}
-          className="absolute bg-card text-card-foreground rounded-2xl shadow-strong border border-border p-5"
+      {/* Loading indicator while waiting for target to scroll into view */}
+      {!ready && (
+        <div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2 px-4 py-3 rounded-full bg-card border border-border shadow-strong"
+          role="status"
+          aria-live="polite"
         >
-          <div className="flex items-start justify-between gap-2 mb-2">
-            <div className="text-xs font-semibold text-primary uppercase tracking-wide">
-              Step {step + 1} of {steps.length}
-            </div>
-            <button
-              onClick={finish}
-              aria-label="Close tour"
-              className="text-muted-foreground hover:text-foreground -mt-1 -mr-1 p-1"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <h3 className="text-lg font-bold font-display mb-1">{current.title}</h3>
-          <p className="text-sm text-muted-foreground mb-4">{current.desc}</p>
+          <span className="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <span className="text-sm font-medium text-foreground">Locating…</span>
+        </div>
+      )}
 
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex gap-1.5">
-              {steps.map((_, i) => (
-                <span
-                  key={i}
-                  className={`h-1.5 rounded-full transition-all ${i === step ? "w-5 bg-primary" : "w-1.5 bg-border"}`}
-                />
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              {step > 0 && (
-                <button
-                  onClick={back}
-                  className="h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground"
-                >
-                  Back
-                </button>
-              )}
+      {/* Tooltip card — only when ready */}
+      {ready && (
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, y: 8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            transition={{ duration: 0.2 }}
+            style={{ top: tipTop, left: tipLeft, width: tipWidth }}
+            className="absolute bg-card text-card-foreground rounded-2xl shadow-strong border border-border p-5"
+          >
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="text-xs font-semibold text-primary uppercase tracking-wide">
+                Step {step + 1} of {steps.length}
+              </div>
               <button
-                onClick={next}
-                className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex items-center gap-1 hover:opacity-95"
+                onClick={finish}
+                aria-label="Close tour"
+                className="text-muted-foreground hover:text-foreground -mt-1 -mr-1 p-1"
               >
-                {step < steps.length - 1 ? (<>Next <ChevronRight className="w-4 h-4" /></>) : "Done"}
+                <X className="w-4 h-4" />
               </button>
             </div>
-          </div>
-        </motion.div>
-      </AnimatePresence>
+            <h3 className="text-lg font-bold font-display mb-1">{current.title}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{current.desc}</p>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex gap-1.5">
+                {steps.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 rounded-full transition-all ${i === step ? "w-5 bg-primary" : "w-1.5 bg-border"}`}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                {step > 0 && (
+                  <button
+                    onClick={back}
+                    className="h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    Back
+                  </button>
+                )}
+                <button
+                  onClick={next}
+                  disabled={!ready}
+                  className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex items-center gap-1 hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {step < steps.length - 1 ? (<>Next <ChevronRight className="w-4 h-4" /></>) : "Done"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      )}
     </div>
   );
 
