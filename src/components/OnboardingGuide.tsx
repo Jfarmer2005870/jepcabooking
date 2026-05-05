@@ -54,10 +54,17 @@ const getRect = (sel: string): Rect | null => {
   return { top: r.top - PADDING, left: r.left - PADDING, width: r.width + PADDING * 2, height: r.height + PADDING * 2 };
 };
 
+const isInViewport = (r: Rect): boolean => {
+  const vh = window.innerHeight;
+  const vw = window.innerWidth;
+  return r.top >= 0 && r.left >= 0 && r.top + r.height <= vh && r.left + r.width <= vw;
+};
+
 const OnboardingGuide = () => {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     try {
@@ -72,26 +79,57 @@ const OnboardingGuide = () => {
 
   useLayoutEffect(() => {
     if (!open) return;
-    const update = () => {
-      if (!current.target) {
-        setRect(null);
+    setReady(false);
+    setRect(null);
+
+    if (!current.target) {
+      setReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    let rafId = 0;
+    let scrolled = false;
+    const start = performance.now();
+    const TIMEOUT = 4000;
+
+    const tick = () => {
+      if (cancelled) return;
+      const r = getRect(current.target!);
+      if (r) {
+        if (!scrolled) {
+          scrolled = true;
+          const el = document.querySelector(`[data-tour="${current.target}"]`) as HTMLElement | null;
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        if (isInViewport(r)) {
+          setRect(r);
+          setReady(true);
+          return;
+        }
+      }
+      if (performance.now() - start > TIMEOUT) {
+        setRect(r);
+        setReady(true);
         return;
       }
-      const r = getRect(current.target);
-      setRect(r);
-      if (r) {
-        const el = document.querySelector(`[data-tour="${current.target}"]`) as HTMLElement | null;
-        el?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+      rafId = requestAnimationFrame(tick);
     };
-    update();
-    const id = window.setTimeout(update, 350);
-    window.addEventListener("resize", update);
-    window.addEventListener("scroll", update, true);
+    rafId = requestAnimationFrame(tick);
+
+    const sync = () => {
+      if (!current.target) return;
+      const r = getRect(current.target);
+      if (r) setRect(r);
+    };
+    window.addEventListener("resize", sync);
+    window.addEventListener("scroll", sync, true);
+
     return () => {
-      window.clearTimeout(id);
-      window.removeEventListener("resize", update);
-      window.removeEventListener("scroll", update, true);
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+      window.removeEventListener("resize", sync);
+      window.removeEventListener("scroll", sync, true);
     };
   }, [open, step, current.target]);
 
