@@ -18,7 +18,7 @@ import { format } from "date-fns";
 import ChatDialog from "@/components/chat/ChatDialog";
 import ServiceReviews from "@/components/reviews/ServiceReviews";
 import PinDropAddress from "@/components/maps/PinDropAddress";
-import { haversineMiles, calcTravelFee } from "@/lib/distance";
+import { haversineMiles, calcBreakdown } from "@/lib/distance";
 import { 
   MapPin, 
   Star, 
@@ -555,18 +555,20 @@ const ServiceDetail = () => {
                     const bp: any = service.business_profiles;
                     const activeCoords = useHomeAddress && homeCoords ? homeCoords : coords;
                     const hasOrigin = bp?.origin_lat != null && bp?.origin_lng != null;
-                    const distance = hasOrigin && activeCoords
+                    const rawDistance = hasOrigin && activeCoords
                       ? haversineMiles({ lat: bp.origin_lat, lng: bp.origin_lng }, activeCoords)
                       : null;
                     const freeRadius = Number(bp?.free_radius_miles ?? 10);
                     const perMile = Number(bp?.per_mile_rate ?? 0);
-                    const travelFee = distance != null ? calcTravelFee(distance, freeRadius, perMile) : 0;
-                    const subtotal = service.price_type === "hourly"
+                    const servicePrice = service.price_type === "hourly"
                       ? service.price_min * estimatedHours
                       : service.price_min;
-                    const withTravel = subtotal + travelFee;
-                    const platformFee = withTravel * 0.05;
-                    const total = withTravel + platformFee;
+                    const b = calcBreakdown({
+                      servicePrice,
+                      rawDistanceMiles: rawDistance,
+                      freeRadius,
+                      perMile,
+                    });
                     return (
                       <div className="p-3 bg-muted/50 rounded-lg text-sm space-y-1">
                         {service.price_type === "hourly" ? (
@@ -583,26 +585,26 @@ const ServiceDetail = () => {
                         ) : null}
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">{service.price_type === "hourly" ? "Subtotal" : "Service price"}</span>
-                          <span className="text-foreground">${subtotal.toFixed(2)}</span>
+                          <span className="text-foreground">${b.servicePrice.toFixed(2)}</span>
                         </div>
-                        {distance != null && (
+                        {b.distanceMiles != null && (
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">
-                              Travel ({distance.toFixed(1)} mi
-                              {perMile > 0 && distance > freeRadius
-                                ? `, ${(distance - freeRadius).toFixed(1)} billable @ $${perMile}/mi`
+                              Travel ({b.distanceMiles.toFixed(1)} mi
+                              {perMile > 0 && b.billableMiles > 0
+                                ? `, ${b.billableMiles.toFixed(1)} billable @ $${perMile}/mi`
                                 : ", within free radius"})
                             </span>
-                            <span className="text-foreground">${travelFee.toFixed(2)}</span>
+                            <span className="text-foreground">${b.travelFee.toFixed(2)}</span>
                           </div>
                         )}
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Platform fee (5%)</span>
-                          <span className="text-foreground">${platformFee.toFixed(2)}</span>
+                          <span className="text-foreground">${b.platformFee.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between font-semibold border-t border-border pt-1">
                           <span className="text-foreground">Total</span>
-                          <span className="text-primary">${total.toFixed(2)}</span>
+                          <span className="text-primary">${b.total.toFixed(2)}</span>
                         </div>
                         {!hasOrigin && perMile > 0 && (
                           <p className="text-xs text-muted-foreground pt-1">Provider hasn't set a dispatch origin yet.</p>
