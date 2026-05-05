@@ -82,39 +82,46 @@
 </head>
 
   <body>
-    <div id="app-splash" aria-hidden="true">
-      <div class="logo">J</div>
-      <div class="name">Jepca</div>
-      <div class="tag">Local pros, on demand</div>
-      <div class="dots"><span></span><span></span><span></span></div>
-    </div>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Hide splash once the app has mounted (and ensure minimum visible time)
-      window.addEventListener('load', function () {
-        var start = performance.now();
-        var minMs = 600;
-        var hide = function () {
-          var el = document.getElementById('app-splash');
-          if (!el) return;
-          el.classList.add('splash-hide');
-          setTimeout(function () { el.remove(); }, 450);
-        };
-        var ready = function () {
-          var elapsed = performance.now() - start;
-          setTimeout(hide, Math.max(0, minMs - elapsed));
-        };
-        // Wait for React to mount something into #root
-        var root = document.getElementById('root');
-        if (root && root.children.length > 0) { ready(); return; }
-        var obs = new MutationObserver(function () {
-          if (root && root.children.length > 0) { obs.disconnect(); ready(); }
+      // Show splash only on cold starts (first load of the session, not on
+      // in-app navigation or refreshes within the same tab session).
+      (function () {
+        var shown = sessionStorage.getItem('jepca_splash_shown');
+        var nav = (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]) || {};
+        var isReload = nav.type === 'reload';
+        if (shown || isReload) return; // skip splash
+        var splash = document.createElement('div');
+        splash.id = 'app-splash';
+        splash.setAttribute('aria-hidden', 'true');
+        splash.innerHTML = '<div class="logo">J</div>' +
+          '<div class="name">Jepca</div>' +
+          '<div class="tag">Local pros, on demand</div>' +
+          '<div class="dots"><span></span><span></span><span></span></div>';
+        document.body.appendChild(splash);
+        sessionStorage.setItem('jepca_splash_shown', '1');
+
+        window.addEventListener('load', function () {
+          var start = performance.now();
+          var minMs = 600;
+          var hide = function () {
+            var el = document.getElementById('app-splash');
+            if (!el) return;
+            el.classList.add('splash-hide');
+            setTimeout(function () { el.remove(); }, 450);
+          };
+          var ready = function () {
+            var elapsed = performance.now() - start;
+            setTimeout(hide, Math.max(0, minMs - elapsed));
+          };
+          var root = document.getElementById('root');
+          if (root && root.children.length > 0) { ready(); return; }
+          var obs = new MutationObserver(function () {
+            if (root && root.children.length > 0) { obs.disconnect(); ready(); }
+          });
+          obs.observe(root, { childList: true });
+          setTimeout(function () { obs.disconnect(); hide(); }, 5000);
         });
-        obs.observe(root, { childList: true });
-        // Safety timeout
-        setTimeout(function () { obs.disconnect(); hide(); }, 5000);
-      });
+      })();
     </script>
   </body>
 </html>
