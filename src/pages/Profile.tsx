@@ -483,6 +483,67 @@ const Profile = () => {
                       <p className="text-sm text-destructive">{errors.service_area}</p>
                     )}
                   </div>
+
+                  {/* Travel pricing */}
+                  <div className="space-y-3 border-t border-border pt-4">
+                    <div>
+                      <Label>Dispatch Origin</Label>
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Drop a pin where you start your jobs from. Travel fees are calculated from here.
+                      </p>
+                      <PinDropAddress
+                        value={businessProfile.address || ""}
+                        initialCoords={
+                          businessProfile.origin_lat != null && businessProfile.origin_lng != null
+                            ? { lat: businessProfile.origin_lat, lng: businessProfile.origin_lng }
+                            : undefined
+                        }
+                        onChange={(_addr, c) =>
+                          setBusinessProfile({
+                            ...businessProfile,
+                            origin_lat: c?.lat ?? businessProfile.origin_lat,
+                            origin_lng: c?.lng ?? businessProfile.origin_lng,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="freeRadius">Free travel radius (miles)</Label>
+                        <Input
+                          id="freeRadius"
+                          type="number"
+                          min={0}
+                          step={0.5}
+                          value={businessProfile.free_radius_miles}
+                          onChange={(e) =>
+                            setBusinessProfile({
+                              ...businessProfile,
+                              free_radius_miles: Math.max(0, parseFloat(e.target.value) || 0),
+                            })
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">No travel charge inside this radius.</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="perMile">Rate per extra mile ($)</Label>
+                        <Input
+                          id="perMile"
+                          type="number"
+                          min={0}
+                          step={0.25}
+                          value={businessProfile.per_mile_rate}
+                          onChange={(e) =>
+                            setBusinessProfile({
+                              ...businessProfile,
+                              per_mile_rate: Math.max(0, parseFloat(e.target.value) || 0),
+                            })
+                          }
+                        />
+                        <p className="text-xs text-muted-foreground">Charged per mile beyond the free radius.</p>
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             )}
