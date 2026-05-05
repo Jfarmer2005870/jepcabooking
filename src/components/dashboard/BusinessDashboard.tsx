@@ -97,6 +97,7 @@ const BusinessDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState<string | null>(null);
+  const [invoiceBooking, setInvoiceBooking] = useState<Booking | null>(null);
   const [stripeStatus, setStripeStatus] = useState<{
     connected: boolean;
     charges_enabled?: boolean;
