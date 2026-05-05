@@ -1,13 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { calcBreakdown, haversineMiles } from "../_shared/pricing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-const PLATFORM_FEE_PERCENT = 5;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -67,31 +66,27 @@ serve(async (req) => {
       servicePrice = baseRate;
     }
 
-    // Distance-based travel fee (haversine, miles)
-    // Keep this in sync with src/lib/distance.ts so UI breakdown == checkout total.
-    let travelDistanceMiles: number | null = null;
-    let travelFee = 0;
+    // Distance-based travel fee (haversine, miles).
+    // Uses the shared calcBreakdown so the UI breakdown and the charged
+    // total are computed by the exact same code.
     const oLat = businessProfile.origin_lat;
     const oLng = businessProfile.origin_lng;
-    const freeRadius = Number(businessProfile.free_radius_miles ?? 10);
-    const perMile = Number(businessProfile.per_mile_rate ?? 0);
-    if (oLat != null && oLng != null && service_lat != null && service_lng != null) {
-      const toRad = (d: number) => (d * Math.PI) / 180;
-      const R = 3958.7613;
-      const dLat = toRad(service_lat - oLat);
-      const dLng = toRad(service_lng - oLng);
-      const h =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(toRad(oLat)) * Math.cos(toRad(service_lat)) * Math.sin(dLng / 2) ** 2;
-      const raw = 2 * R * Math.asin(Math.sqrt(h));
-      travelDistanceMiles = Math.round(raw * 10) / 10; // round to 0.1 mi
-      const billable = Math.max(0, Math.round((travelDistanceMiles - freeRadius) * 10) / 10);
-      travelFee = Math.round(billable * perMile * 100) / 100;
-    }
+    const rawDistance =
+      oLat != null && oLng != null && service_lat != null && service_lng != null
+        ? haversineMiles({ lat: oLat, lng: oLng }, { lat: service_lat, lng: service_lng })
+        : null;
 
-    const subtotalCents = Math.round((servicePrice + travelFee) * 100);
-    const platformFeeCents = Math.round(subtotalCents * PLATFORM_FEE_PERCENT / 100);
-    const totalCents = subtotalCents + platformFeeCents;
+    const breakdown = calcBreakdown({
+      servicePrice,
+      rawDistanceMiles: rawDistance,
+      freeRadius: Number(businessProfile.free_radius_miles ?? 10),
+      perMile: Number(businessProfile.per_mile_rate ?? 0),
+    });
+
+    const travelDistanceMiles = breakdown.distanceMiles;
+    const travelFee = breakdown.travelFee;
+    const platformFeeCents = Math.round(breakdown.platformFee * 100);
+    const totalCents = Math.round(breakdown.total * 100);
 
     // Check/create Stripe customer
     const customers = await stripe.customers.list({ email: user.email!, limit: 1 });
