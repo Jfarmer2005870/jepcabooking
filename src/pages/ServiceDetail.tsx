@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import ChatDialog from "@/components/chat/ChatDialog";
 import ServiceReviews from "@/components/reviews/ServiceReviews";
+import PinDropAddress from "@/components/maps/PinDropAddress";
 import { 
   MapPin, 
   Star, 
@@ -489,13 +490,9 @@ const ServiceDetail = () => {
                         </p>
                       </div>
                     ) : (
-                      <Textarea
-                        id="address"
+                      <PinDropAddress
                         value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        placeholder="Enter the full address where the service will be performed..."
-                        rows={2}
-                        required
+                        onChange={(addr) => setAddress(addr)}
                       />
                     )}
                     

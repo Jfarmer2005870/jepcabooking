@@ -316,16 +316,13 @@ const Profile = () => {
                 {/* Home Address - only for consumers */}
                 {userRole === "consumer" && (
                   <div className="space-y-2">
-                    <Label htmlFor="homeAddress">Home Address</Label>
-                    <Textarea
-                      id="homeAddress"
+                    <Label>Home Address</Label>
+                    <PinDropAddress
                       value={profile.home_address}
-                      onChange={(e) => setProfile({ ...profile, home_address: e.target.value })}
-                      placeholder="Enter your home address (this will be saved for quick booking)"
-                      rows={2}
+                      onChange={(addr) => setProfile({ ...profile, home_address: addr })}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Save your home address to quickly use it when booking services
+                      Drop a pin or search to save your home address for faster booking
                     </p>
                   </div>
                 )}
