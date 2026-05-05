@@ -59,7 +59,7 @@ const HeroSection = () => {
           transition={{ duration: 0.4, delay: 0.05 }}
           className="flex flex-col md:flex-row gap-2 mb-5"
         >
-          <div className="flex-1 flex items-center gap-3 px-4 h-14 bg-card rounded-2xl border border-border shadow-soft focus-within:ring-2 focus-within:ring-primary/30">
+          <div data-tour="search" className="flex-1 flex items-center gap-3 px-4 h-14 bg-card rounded-2xl border border-border shadow-soft focus-within:ring-2 focus-within:ring-primary/30">
             <Search className="w-5 h-5 text-muted-foreground shrink-0" />
             <input
               value={query}
@@ -69,7 +69,7 @@ const HeroSection = () => {
               className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
             />
           </div>
-          <div className="hidden md:flex items-center gap-3 px-4 h-14 bg-card rounded-2xl border border-border shadow-soft md:w-64 focus-within:ring-2 focus-within:ring-primary/30">
+          <div data-tour="address" className="hidden md:flex items-center gap-3 px-4 h-14 bg-card rounded-2xl border border-border shadow-soft md:w-64 focus-within:ring-2 focus-within:ring-primary/30">
             <MapPin className="w-5 h-5 text-muted-foreground shrink-0" />
             <input
               value={location}
