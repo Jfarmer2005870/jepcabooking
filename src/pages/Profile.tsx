@@ -34,6 +34,10 @@ interface BusinessProfileData {
   state: string;
   zip_code: string;
   service_area: string;
+  origin_lat: number | null;
+  origin_lng: number | null;
+  free_radius_miles: number;
+  per_mile_rate: number;
 }
 
 const Profile = () => {
@@ -62,6 +66,10 @@ const Profile = () => {
     state: "",
     zip_code: "",
     service_area: "",
+    origin_lat: null,
+    origin_lng: null,
+    free_radius_miles: 10,
+    per_mile_rate: 0,
   });
 
   useEffect(() => {
@@ -112,6 +120,7 @@ const Profile = () => {
           }
 
           if (businessData) {
+            const bd = businessData as any;
             setBusinessProfile({
               business_name: businessData.business_name || "",
               description: businessData.description || "",
@@ -121,6 +130,10 @@ const Profile = () => {
               state: businessData.state || "",
               zip_code: businessData.zip_code || "",
               service_area: businessData.service_area || "",
+              origin_lat: bd.origin_lat ?? null,
+              origin_lng: bd.origin_lng ?? null,
+              free_radius_miles: bd.free_radius_miles != null ? Number(bd.free_radius_miles) : 10,
+              per_mile_rate: bd.per_mile_rate != null ? Number(bd.per_mile_rate) : 0,
             });
           }
         }
@@ -208,7 +221,11 @@ const Profile = () => {
             state: businessProfile.state || null,
             zip_code: businessProfile.zip_code || null,
             service_area: businessProfile.service_area || null,
-          })
+            origin_lat: businessProfile.origin_lat,
+            origin_lng: businessProfile.origin_lng,
+            free_radius_miles: businessProfile.free_radius_miles,
+            per_mile_rate: businessProfile.per_mile_rate,
+          } as any)
           .eq("user_id", user.id);
 
         if (businessError) throw businessError;
