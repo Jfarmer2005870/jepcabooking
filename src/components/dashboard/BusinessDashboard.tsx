@@ -714,6 +714,14 @@ const BusinessDashboard = () => {
                         Mark Complete
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setInvoiceBooking(booking)}
+                    >
+                      <FileText className="w-4 h-4 mr-1" />
+                      {booking.business_signature ? "View Invoice" : "Sign Invoice"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -727,6 +735,17 @@ const BusinessDashboard = () => {
         onOpenChange={setIsAddServiceOpen}
         businessId={businessProfile?.id || ""}
         onServiceAdded={fetchBusinessData}
+      />
+
+      <InvoiceDialog
+        open={!!invoiceBooking}
+        onOpenChange={(open) => !open && setInvoiceBooking(null)}
+        booking={invoiceBooking as unknown as InvoiceBooking}
+        canSign
+        onSigned={() => {
+          fetchBusinessData();
+          setInvoiceBooking(null);
+        }}
       />
     </div>
   );
