@@ -18,7 +18,7 @@ import { format } from "date-fns";
 import ChatDialog from "@/components/chat/ChatDialog";
 import ServiceReviews from "@/components/reviews/ServiceReviews";
 import PinDropAddress from "@/components/maps/PinDropAddress";
-import { haversineMiles, calcTravelFee } from "@/lib/distance";
+import { haversineMiles, calcBreakdown } from "@/lib/distance";
 import { 
   MapPin, 
   Star, 
