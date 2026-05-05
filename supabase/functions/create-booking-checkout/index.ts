@@ -88,6 +88,8 @@ serve(async (req) => {
         scheduled_date,
         scheduled_time,
         service_address,
+        service_lat: service_lat ?? null,
+        service_lng: service_lng ?? null,
         notes: notes || null,
         total_price: totalCents / 100,
         platform_fee: platformFeeCents / 100,
