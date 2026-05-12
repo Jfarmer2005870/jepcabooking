@@ -734,7 +734,29 @@ const BusinessDashboard = () => {
                       <FileText className="w-4 h-4 mr-1" />
                       {booking.business_signature ? "View Invoice" : "Sign Invoice"}
                     </Button>
+                    {(booking.status === "completed" || booking.dispute_status === "open") &&
+                      (booking.refunded_amount || 0) < (booking.total_price || 0) && (
+                        <Button
+                          size="sm"
+                          variant={booking.dispute_status === "open" ? "destructive" : "outline"}
+                          onClick={() => setRefundBooking(booking)}
+                        >
+                          <DollarSign className="w-4 h-4 mr-1" />
+                          {booking.dispute_status === "open" ? "Resolve & Refund" : "Refund"}
+                        </Button>
+                      )}
                   </div>
+                  {booking.dispute_status === "open" && booking.dispute_reason && (
+                    <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs">
+                      <span className="font-medium text-destructive">Customer issue: </span>
+                      <span className="text-foreground/80">{booking.dispute_reason}</span>
+                    </div>
+                  )}
+                  {(booking.refunded_amount || 0) > 0 && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Refunded: ${Number(booking.refunded_amount).toFixed(2)}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}
