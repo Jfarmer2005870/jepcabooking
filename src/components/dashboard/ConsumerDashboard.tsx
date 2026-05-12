@@ -535,6 +535,16 @@ const ConsumerDashboard = () => {
         businessId={chatTarget?.businessId}
         businessName={chatTarget?.businessName}
       />
+
+      {reportBooking && (
+        <ReportIssueDialog
+          open={!!reportBooking}
+          onOpenChange={(open) => !open && setReportBooking(null)}
+          bookingId={reportBooking.id}
+          serviceName={reportBooking.services.title}
+          onReported={fetchBookings}
+        />
+      )}
     </div>
   );
 };
