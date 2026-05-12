@@ -27,6 +27,7 @@ import { useToast } from "@/hooks/use-toast";
 import AddServiceDialog from "./AddServiceDialog";
 import AISummarizeNotes from "./AISummarizeNotes";
 import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
+import RefundDialog from "./RefundDialog";
 
 interface BusinessProfile {
   id: string;
@@ -60,6 +61,9 @@ interface Booking {
   business_signature: string | null;
   business_signature_at: string | null;
   business_signature_name: string | null;
+  dispute_status: string | null;
+  dispute_reason: string | null;
+  refunded_amount: number | null;
   created_at: string;
   services: {
     title: string;
