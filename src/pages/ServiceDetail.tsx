@@ -106,6 +106,7 @@ const ServiceDetail = () => {
   const [homeCoords, setHomeCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [notes, setNotes] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [availability, setAvailability] = useState<{ weekday: number; start_time: string; end_time: string }[]>([]);
 
   useEffect(() => {
     if (id) {
