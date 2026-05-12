@@ -67,6 +67,9 @@ const Auth = () => {
       if (userType === "business" && !businessName.trim()) {
         newErrors.businessName = "Business name is required";
       }
+      if (!acceptedTerms) {
+        newErrors.terms = "You must accept the Terms and Privacy Policy to continue";
+      }
     }
 
     setErrors(newErrors);
@@ -160,6 +163,7 @@ const Auth = () => {
     setPassword("");
     setFullName("");
     setBusinessName("");
+    setAcceptedTerms(false);
     setErrors({});
     setUserType(null);
   };
