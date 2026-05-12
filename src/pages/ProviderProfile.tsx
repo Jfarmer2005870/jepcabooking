@@ -16,6 +16,7 @@ import {
   Globe,
   Clock,
   ArrowRight,
+  Flag,
 } from "lucide-react";
 
 interface BusinessProfile {
@@ -285,6 +286,32 @@ const ProviderProfile = () => {
                     })}
                   </ul>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-primary" /> Trust & safety
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm text-muted-foreground">
+                <p>
+                  All providers agree to Jepca's{" "}
+                  <Link to="/terms" className="text-primary hover:underline">Terms</Link>. Payments are
+                  held securely until the job is completed.
+                </p>
+                <Button variant="outline" size="sm" className="w-full" asChild>
+                  <a
+                    href={`mailto:support@jepca.app?subject=${encodeURIComponent(
+                      `Report provider: ${profile.business_name}`,
+                    )}&body=${encodeURIComponent(
+                      `Provider ID: ${profile.id}\nProvider name: ${profile.business_name}\n\nWhat happened?\n`,
+                    )}`}
+                  >
+                    <Flag className="w-4 h-4 mr-2" /> Report this provider
+                  </a>
+                </Button>
               </CardContent>
             </Card>
           </aside>

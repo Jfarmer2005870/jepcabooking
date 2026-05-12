@@ -663,7 +663,10 @@ const ServiceDetail = () => {
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground">
-                    Secure payment processed via Stripe
+                    Secure payment processed via Stripe. By booking, you agree to our{" "}
+                    <a href="/terms" target="_blank" rel="noreferrer" className="underline hover:text-primary">Terms</a>
+                    {" "}and{" "}
+                    <a href="/privacy" target="_blank" rel="noreferrer" className="underline hover:text-primary">Privacy Policy</a>.
                   </p>
                 </CardContent>
               </Card>
