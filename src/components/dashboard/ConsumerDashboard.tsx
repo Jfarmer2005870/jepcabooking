@@ -188,6 +188,8 @@ const ConsumerDashboard = () => {
       setCancelling(false);
     }
   };
+
+  return (
     <div className="space-y-8">
       {/* Welcome + Search */}
       <div className="space-y-4">
