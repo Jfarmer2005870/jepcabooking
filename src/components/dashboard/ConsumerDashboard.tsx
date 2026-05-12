@@ -457,6 +457,46 @@ const ConsumerDashboard = () => {
         onOpenChange={(open) => !open && setInvoiceBooking(null)}
         booking={invoiceBooking as unknown as InvoiceBooking}
       />
+
+      {rescheduleBooking && (
+        <RescheduleBookingDialog
+          open={!!rescheduleBooking}
+          onOpenChange={(open) => !open && setRescheduleBooking(null)}
+          bookingId={rescheduleBooking.id}
+          currentDate={rescheduleBooking.scheduled_date}
+          currentTime={rescheduleBooking.scheduled_time}
+        />
+      )}
+
+      <AlertDialog
+        open={!!cancelBooking}
+        onOpenChange={(open) => !open && !cancelling && setCancelBooking(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {cancelBooking
+                ? `This will cancel "${cancelBooking.services.title}" with ${cancelBooking.business_profiles.business_name}. This can't be undone.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Keep booking</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmCancel();
+              }}
+              disabled={cancelling}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {cancelling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Yes, cancel
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
