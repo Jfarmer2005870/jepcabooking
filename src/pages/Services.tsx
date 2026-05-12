@@ -79,7 +79,12 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  
+  const [sortBy, setSortBy] = useState<"newest" | "price_asc" | "price_desc" | "rating">("newest");
+  const [maxPrice, setMaxPrice] = useState<string>("");
+  const [minRating, setMinRating] = useState<string>("0");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+
   // Get category from URL params
   const categoryFromUrl = searchParams.get("category");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryFromUrl);
@@ -131,26 +136,61 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
     }
   };
 
-  const filteredServices = services.filter((service) => {
-    const matchesSearch = 
-      service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.business_profiles.business_name.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = !selectedCategory || service.category === selectedCategory;
+  const priceWithFee = (s: Service) => {
+    const base = s.price_min ?? s.price_max ?? null;
+    return base !== null ? base * 1.05 : null;
+  };
 
-    return matchesSearch && matchesCategory;
-  });
+  const filteredServices = services
+    .filter((service) => {
+      const matchesSearch =
+        service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.business_profiles.business_name.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesCategory = !selectedCategory || service.category === selectedCategory;
+
+      const p = priceWithFee(service);
+      const matchesPrice = !maxPrice || p === null || p <= Number(maxPrice);
+
+      const r = service.business_profiles.rating ?? 0;
+      const matchesRating = r >= Number(minRating);
+
+      const matchesVerified = !verifiedOnly || !!service.business_profiles.is_verified;
+
+      return matchesSearch && matchesCategory && matchesPrice && matchesRating && matchesVerified;
+    })
+    .sort((a, b) => {
+      if (sortBy === "rating") {
+        return (b.business_profiles.rating ?? 0) - (a.business_profiles.rating ?? 0);
+      }
+      if (sortBy === "price_asc" || sortBy === "price_desc") {
+        const pa = priceWithFee(a) ?? Number.MAX_SAFE_INTEGER;
+        const pb = priceWithFee(b) ?? Number.MAX_SAFE_INTEGER;
+        return sortBy === "price_asc" ? pa - pb : pb - pa;
+      }
+      return 0;
+    });
+
+  const activeFilterCount =
+    (maxPrice ? 1 : 0) + (Number(minRating) > 0 ? 1 : 0) + (verifiedOnly ? 1 : 0);
+
+  const clearFilters = () => {
+    setMaxPrice("");
+    setMinRating("0");
+    setVerifiedOnly(false);
+    setSortBy("newest");
+  };
 
   const formatPrice = (service: Service) => {
     if (!service.price_min && !service.price_max) return "Get Quote";
     if (service.price_type === "quote") return "Get Quote";
-    
+
     const fee = 1.05; // 5% platform fee
     const min = service.price_min ? `$${(service.price_min * fee).toFixed(2)}` : "";
     const max = service.price_max ? `$${(service.price_max * fee).toFixed(2)}` : "";
     const type = service.price_type === "hourly" ? "/hr" : "";
-    
+
     if (min && max && min !== max) return `${min} - ${max}${type}`;
     return `${min || max}${type}`;
   };
