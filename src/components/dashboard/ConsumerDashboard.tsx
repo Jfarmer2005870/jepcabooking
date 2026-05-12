@@ -305,11 +305,18 @@ const ConsumerDashboard = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to="/dashboard?tab=messages">
-                          <MessageSquare className="w-4 h-4 mr-1.5" />
-                          Message provider
-                        </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setChatTarget({
+                            businessId: booking.business_id,
+                            businessName: booking.business_profiles.business_name,
+                          })
+                        }
+                      >
+                        <MessageSquare className="w-4 h-4 mr-1.5" />
+                        Message provider
                       </Button>
                       <Button
                         variant="ghost"
