@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import SEO from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -151,6 +152,10 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
 
   return (
     <div ref={ref} className="min-h-screen flex flex-col bg-background">
+      <SEO
+        title={selectedCategory ? `${selectedCategory} services — Jepca` : "Browse Local Services — Jepca"}
+        description="Browse cleaning, plumbing, electrical, landscaping, painting, moving and more. Compare verified providers and book in seconds."
+      />
       <Header />
       <main className="flex-1 pt-20 md:pt-24">
         {/* Hero Section */}

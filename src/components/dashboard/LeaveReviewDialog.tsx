@@ -64,22 +64,8 @@ const LeaveReviewDialog = ({
 
       if (error) throw error;
 
-      // Send notification to business owner
-      const { data: bizProfile } = await supabase
-        .from("business_profiles")
-        .select("user_id")
-        .eq("id", businessId)
-        .maybeSingle();
-
-      if (bizProfile?.user_id) {
-        await supabase.from("notifications").insert({
-          user_id: bizProfile.user_id,
-          type: "review",
-          title: "New Review Received",
-          message: `You received a ${rating}-star review for "${serviceName}"`,
-          related_id: bookingId,
-        });
-      }
+      // Notification to business owner is now created automatically by a database trigger
+      // (notify_business_on_review) — no client-side insert required.
 
       toast({
         title: "Review submitted!",

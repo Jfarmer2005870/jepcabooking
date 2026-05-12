@@ -85,7 +85,7 @@ const ServiceReviews = ({ businessId }: ServiceReviewsProps) => {
       const consumerIds = [...new Set(reviewData.map((r) => r.consumer_id))];
       const { data: profiles } = consumerIds.length > 0
         ? await supabase
-            .from("profiles")
+            .from("public_profiles" as any)
             .select("user_id, full_name")
             .in("user_id", consumerIds)
         : { data: [] };

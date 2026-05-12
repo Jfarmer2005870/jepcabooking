@@ -45,9 +45,15 @@ const features = [
   },
 ];
 
+import SEO from "@/components/SEO";
+
 const Features = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SEO
+        title="Features — Jepca"
+        description="Booking, secure payments, real-time chat, reviews, notifications and more — everything you need to manage local services."
+      />
       <Header />
       <main className="container mx-auto px-4 py-12 md:py-16 max-w-5xl mt-16 md:mt-20">
         <div className="text-center mb-12">

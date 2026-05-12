@@ -105,6 +105,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bookings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_business_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bookings_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -223,6 +230,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "business_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_business_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -473,6 +487,13 @@ export type Database = {
             referencedRelation: "business_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "reviews_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_business_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       services: {
@@ -526,6 +547,13 @@ export type Database = {
             referencedRelation: "business_profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "services_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_business_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       suppressed_emails: {
@@ -572,7 +600,93 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_business_profiles: {
+        Row: {
+          address: string | null
+          business_name: string | null
+          city: string | null
+          created_at: string | null
+          description: string | null
+          free_radius_miles: number | null
+          id: string | null
+          is_verified: boolean | null
+          logo_url: string | null
+          origin_lat: number | null
+          origin_lng: number | null
+          per_mile_rate: number | null
+          rating: number | null
+          service_area: string | null
+          state: string | null
+          total_reviews: number | null
+          updated_at: string | null
+          user_id: string | null
+          website: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_name?: string | null
+          city?: string | null
+          created_at?: string | null
+          description?: string | null
+          free_radius_miles?: number | null
+          id?: string | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          origin_lat?: number | null
+          origin_lng?: number | null
+          per_mile_rate?: number | null
+          rating?: number | null
+          service_area?: string | null
+          state?: string | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          website?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_name?: string | null
+          city?: string | null
+          created_at?: string | null
+          description?: string | null
+          free_radius_miles?: number | null
+          id?: string | null
+          is_verified?: boolean | null
+          logo_url?: string | null
+          origin_lat?: number | null
+          origin_lng?: number | null
+          per_mile_rate?: number | null
+          rating?: number | null
+          service_area?: string | null
+          state?: string | null
+          total_reviews?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+          website?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          full_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          full_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          full_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       delete_email: {
