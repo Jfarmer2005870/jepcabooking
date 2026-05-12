@@ -576,6 +576,11 @@ const BusinessDashboard = () => {
         </div>
       )}
 
+      {/* Working hours */}
+      {businessProfile && (
+        <ProviderAvailabilityEditor businessId={businessProfile.id} />
+      )}
+
       {/* Your Services */}
       <div>
         <div className="flex items-center justify-between mb-4">
