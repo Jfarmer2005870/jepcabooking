@@ -68,6 +68,34 @@ serve(async (req) => {
     }
 
     if (action === "accept") {
+      // Gate: provider must have a Stripe Connect account that can accept charges + payouts
+      const { data: bp } = await admin
+        .from("business_profiles")
+        .select("stripe_account_id")
+        .eq("id", booking.business_id)
+        .maybeSingle();
+      if (!bp?.stripe_account_id) {
+        return new Response(
+          JSON.stringify({ error: "Finish your Stripe payout setup before accepting bookings." }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
+      try {
+        const acct = await stripe.accounts.retrieve(bp.stripe_account_id);
+        if (!acct.charges_enabled || !acct.payouts_enabled) {
+          return new Response(
+            JSON.stringify({
+              error: "Your Stripe account isn't fully set up yet. Complete onboarding to accept bookings.",
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+          );
+        }
+      } catch (e) {
+        return new Response(
+          JSON.stringify({ error: "Could not verify your Stripe account. Try again shortly." }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+        );
+      }
       if (paymentIntentId) {
         try {
           await stripe.paymentIntents.capture(paymentIntentId);

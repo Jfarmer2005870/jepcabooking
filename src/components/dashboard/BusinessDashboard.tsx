@@ -536,7 +536,8 @@ const BusinessDashboard = () => {
                     <Button
                       size="sm"
                       onClick={() => updateBookingStatus(booking.id, "confirmed")}
-                      disabled={updatingBooking === booking.id}
+                      disabled={updatingBooking === booking.id || !stripeStatus?.charges_enabled}
+                      title={!stripeStatus?.charges_enabled ? "Finish Stripe payout setup to accept bookings" : ""}
                     >
                       {updatingBooking === booking.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
@@ -557,6 +558,12 @@ const BusinessDashboard = () => {
                       Decline
                     </Button>
                   </div>
+                  {!stripeStatus?.charges_enabled && (
+                    <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      Connect Stripe above to enable accepting bookings.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}

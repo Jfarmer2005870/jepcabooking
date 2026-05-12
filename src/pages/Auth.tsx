@@ -30,6 +30,7 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -65,6 +66,9 @@ const Auth = () => {
       }
       if (userType === "business" && !businessName.trim()) {
         newErrors.businessName = "Business name is required";
+      }
+      if (!acceptedTerms) {
+        newErrors.terms = "You must accept the Terms and Privacy Policy to continue";
       }
     }
 
@@ -159,6 +163,7 @@ const Auth = () => {
     setPassword("");
     setFullName("");
     setBusinessName("");
+    setAcceptedTerms(false);
     setErrors({});
     setUserType(null);
   };
@@ -367,6 +372,33 @@ const Auth = () => {
                       <p className="text-sm text-destructive">{errors.password}</p>
                     )}
                   </div>
+
+                  {mode === "signup" && (
+                    <div className="space-y-2">
+                      <label className="flex items-start gap-2 text-sm text-muted-foreground cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={acceptedTerms}
+                          onChange={(e) => setAcceptedTerms(e.target.checked)}
+                          className="mt-0.5 rounded border-border accent-primary"
+                        />
+                        <span>
+                          I agree to Jepca's{" "}
+                          <a href="/terms" target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                            Terms of Service
+                          </a>{" "}
+                          and{" "}
+                          <a href="/privacy-policy" target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                            Privacy Policy
+                          </a>
+                          .
+                        </span>
+                      </label>
+                      {errors.terms && (
+                        <p className="text-sm text-destructive">{errors.terms}</p>
+                      )}
+                    </div>
+                  )}
 
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? (
