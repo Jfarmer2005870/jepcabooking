@@ -480,34 +480,19 @@ const ServiceDetail = () => {
 
                   <div className="space-y-2">
                     <Label>Preferred Time <span className="text-destructive">*</span></Label>
-                    <Select value={time} onValueChange={setTime}>
+                    <Select value={time} onValueChange={setTime} disabled={availableSlots.length === 0}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a time" />
+                        <SelectValue placeholder={availableSlots.length === 0 ? "Provider closed on this day" : "Select a time"} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="08:00">8:00 AM</SelectItem>
-                        <SelectItem value="08:30">8:30 AM</SelectItem>
-                        <SelectItem value="09:00">9:00 AM</SelectItem>
-                        <SelectItem value="09:30">9:30 AM</SelectItem>
-                        <SelectItem value="10:00">10:00 AM</SelectItem>
-                        <SelectItem value="10:30">10:30 AM</SelectItem>
-                        <SelectItem value="11:00">11:00 AM</SelectItem>
-                        <SelectItem value="11:30">11:30 AM</SelectItem>
-                        <SelectItem value="12:00">12:00 PM</SelectItem>
-                        <SelectItem value="12:30">12:30 PM</SelectItem>
-                        <SelectItem value="13:00">1:00 PM</SelectItem>
-                        <SelectItem value="13:30">1:30 PM</SelectItem>
-                        <SelectItem value="14:00">2:00 PM</SelectItem>
-                        <SelectItem value="14:30">2:30 PM</SelectItem>
-                        <SelectItem value="15:00">3:00 PM</SelectItem>
-                        <SelectItem value="15:30">3:30 PM</SelectItem>
-                        <SelectItem value="16:00">4:00 PM</SelectItem>
-                        <SelectItem value="16:30">4:30 PM</SelectItem>
-                        <SelectItem value="17:00">5:00 PM</SelectItem>
-                        <SelectItem value="17:30">5:30 PM</SelectItem>
-                        <SelectItem value="18:00">6:00 PM</SelectItem>
+                        {availableSlots.map((s) => (
+                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
+                    {date && availableSlots.length === 0 && (
+                      <p className="text-xs text-destructive">This provider isn't open on the selected day. Please pick another date.</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
