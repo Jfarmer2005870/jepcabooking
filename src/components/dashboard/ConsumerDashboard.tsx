@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar, Clock, Search, MapPin, Star, FileText, MessageSquare, CalendarPlus, CalendarClock, X, Loader2 } from "lucide-react";
 import LeaveReviewDialog from "./LeaveReviewDialog";
 import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
+import ReportIssueDialog from "./ReportIssueDialog";
 import BookingStatusTracker from "./BookingStatusTracker";
 import QuickCategories from "./QuickCategories";
 import RescheduleBookingDialog from "./RescheduleBookingDialog";
@@ -41,6 +42,9 @@ interface Booking {
   business_signature: string | null;
   business_signature_at: string | null;
   business_signature_name: string | null;
+  dispute_status: string | null;
+  dispute_reason: string | null;
+  refunded_amount: number | null;
   created_at: string;
   services: {
     title: string;
