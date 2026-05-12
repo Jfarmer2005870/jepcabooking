@@ -27,6 +27,8 @@ import { useToast } from "@/hooks/use-toast";
 import AddServiceDialog from "./AddServiceDialog";
 import AISummarizeNotes from "./AISummarizeNotes";
 import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
+import RefundDialog from "./RefundDialog";
+import ProviderAvailabilityEditor from "./ProviderAvailabilityEditor";
 
 interface BusinessProfile {
   id: string;
@@ -60,6 +62,9 @@ interface Booking {
   business_signature: string | null;
   business_signature_at: string | null;
   business_signature_name: string | null;
+  dispute_status: string | null;
+  dispute_reason: string | null;
+  refunded_amount: number | null;
   created_at: string;
   services: {
     title: string;
@@ -98,6 +103,7 @@ const BusinessDashboard = () => {
   const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState<string | null>(null);
   const [invoiceBooking, setInvoiceBooking] = useState<Booking | null>(null);
+  const [refundBooking, setRefundBooking] = useState<Booking | null>(null);
   const [stripeStatus, setStripeStatus] = useState<{
     connected: boolean;
     charges_enabled?: boolean;
@@ -571,6 +577,11 @@ const BusinessDashboard = () => {
         </div>
       )}
 
+      {/* Working hours */}
+      {businessProfile && (
+        <ProviderAvailabilityEditor businessId={businessProfile.id} />
+      )}
+
       {/* Your Services */}
       <div>
         <div className="flex items-center justify-between mb-4">
@@ -729,7 +740,29 @@ const BusinessDashboard = () => {
                       <FileText className="w-4 h-4 mr-1" />
                       {booking.business_signature ? "View Invoice" : "Sign Invoice"}
                     </Button>
+                    {(booking.status === "completed" || booking.dispute_status === "open") &&
+                      (booking.refunded_amount || 0) < (booking.total_price || 0) && (
+                        <Button
+                          size="sm"
+                          variant={booking.dispute_status === "open" ? "destructive" : "outline"}
+                          onClick={() => setRefundBooking(booking)}
+                        >
+                          <DollarSign className="w-4 h-4 mr-1" />
+                          {booking.dispute_status === "open" ? "Resolve & Refund" : "Refund"}
+                        </Button>
+                      )}
                   </div>
+                  {booking.dispute_status === "open" && booking.dispute_reason && (
+                    <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs">
+                      <span className="font-medium text-destructive">Customer issue: </span>
+                      <span className="text-foreground/80">{booking.dispute_reason}</span>
+                    </div>
+                  )}
+                  {(booking.refunded_amount || 0) > 0 && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Refunded: ${Number(booking.refunded_amount).toFixed(2)}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -754,6 +787,21 @@ const BusinessDashboard = () => {
           setInvoiceBooking(null);
         }}
       />
+
+      {refundBooking && (
+        <RefundDialog
+          open={!!refundBooking}
+          onOpenChange={(open) => !open && setRefundBooking(null)}
+          bookingId={refundBooking.id}
+          totalPrice={refundBooking.total_price || 0}
+          alreadyRefunded={refundBooking.refunded_amount || 0}
+          disputeReason={refundBooking.dispute_reason}
+          onRefunded={() => {
+            fetchBusinessData();
+            setRefundBooking(null);
+          }}
+        />
+      )}
     </div>
   );
 };

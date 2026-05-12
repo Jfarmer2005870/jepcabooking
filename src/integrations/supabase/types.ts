@@ -26,6 +26,9 @@ export type Database = {
           consumer_signature_at: string | null
           consumer_signature_name: string | null
           created_at: string
+          dispute_opened_at: string | null
+          dispute_reason: string | null
+          dispute_resolved_at: string | null
           dispute_status: string | null
           id: string
           invoice_photos: string[]
@@ -57,6 +60,9 @@ export type Database = {
           consumer_signature_at?: string | null
           consumer_signature_name?: string | null
           created_at?: string
+          dispute_opened_at?: string | null
+          dispute_reason?: string | null
+          dispute_resolved_at?: string | null
           dispute_status?: string | null
           id?: string
           invoice_photos?: string[]
@@ -88,6 +94,9 @@ export type Database = {
           consumer_signature_at?: string | null
           consumer_signature_name?: string | null
           created_at?: string
+          dispute_opened_at?: string | null
+          dispute_reason?: string | null
+          dispute_resolved_at?: string | null
           dispute_status?: string | null
           id?: string
           invoice_photos?: string[]
@@ -136,6 +145,8 @@ export type Database = {
         Row: {
           address: string | null
           business_name: string
+          cancellation_fee_pct: number
+          cancellation_window_hours: number
           city: string | null
           created_at: string
           description: string | null
@@ -159,6 +170,8 @@ export type Database = {
         Insert: {
           address?: string | null
           business_name: string
+          cancellation_fee_pct?: number
+          cancellation_window_hours?: number
           city?: string | null
           created_at?: string
           description?: string | null
@@ -182,6 +195,8 @@ export type Database = {
         Update: {
           address?: string | null
           business_name?: string
+          cancellation_fee_pct?: number
+          cancellation_window_hours?: number
           city?: string | null
           created_at?: string
           description?: string | null
@@ -453,6 +468,36 @@ export type Database = {
           stripe_customer_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      provider_availability: {
+        Row: {
+          business_id: string
+          created_at: string
+          end_time: string
+          id: string
+          start_time: string
+          updated_at: string
+          weekday: number
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          end_time: string
+          id?: string
+          start_time: string
+          updated_at?: string
+          weekday: number
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+          updated_at?: string
+          weekday?: number
         }
         Relationships: []
       }

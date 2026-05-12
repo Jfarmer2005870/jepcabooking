@@ -106,6 +106,12 @@ const ServiceDetail = () => {
   const [homeCoords, setHomeCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [notes, setNotes] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [availability, setAvailability] = useState<{ weekday: number; start_time: string; end_time: string }[]>([]);
+
+  useEffect(() => {
+    if (time && !availableSlots.find((s) => s.value === time)) setTime("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, availability]);
 
   useEffect(() => {
     if (id) {
@@ -163,12 +169,49 @@ const ServiceDetail = () => {
 
       if (error) throw error;
       setService(data);
+      if (data?.business_profiles?.id) {
+        const { data: avail } = await supabase
+          .from("provider_availability")
+          .select("weekday, start_time, end_time")
+          .eq("business_id", data.business_profiles.id);
+        setAvailability((avail || []).map((a) => ({
+          weekday: a.weekday,
+          start_time: a.start_time.slice(0, 5),
+          end_time: a.end_time.slice(0, 5),
+        })));
+      }
     } catch (error) {
       console.error("Error fetching service:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // All possible 30-min slots from 08:00 to 18:00
+  const ALL_SLOTS: { value: string; label: string }[] = (() => {
+    const out: { value: string; label: string }[] = [];
+    for (let h = 8; h <= 18; h++) {
+      for (const m of [0, 30]) {
+        if (h === 18 && m > 0) break;
+        const v = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+        const ampm = h < 12 ? "AM" : "PM";
+        const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+        out.push({ value: v, label: `${h12}:${String(m).padStart(2, "0")} ${ampm}` });
+      }
+    }
+    return out;
+  })();
+
+  const availableSlots = (() => {
+    if (!date) return ALL_SLOTS;
+    if (availability.length === 0) return ALL_SLOTS; // provider hasn't set hours = open
+    const wd = date.getDay();
+    const windows = availability.filter((a) => a.weekday === wd);
+    if (windows.length === 0) return [];
+    return ALL_SLOTS.filter((s) =>
+      windows.some((w) => s.value >= w.start_time && s.value < w.end_time)
+    );
+  })();
 
   const handleBooking = async () => {
     if (!user) {
@@ -442,34 +485,19 @@ const ServiceDetail = () => {
 
                   <div className="space-y-2">
                     <Label>Preferred Time <span className="text-destructive">*</span></Label>
-                    <Select value={time} onValueChange={setTime}>
+                    <Select value={time} onValueChange={setTime} disabled={availableSlots.length === 0}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a time" />
+                        <SelectValue placeholder={availableSlots.length === 0 ? "Provider closed on this day" : "Select a time"} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="08:00">8:00 AM</SelectItem>
-                        <SelectItem value="08:30">8:30 AM</SelectItem>
-                        <SelectItem value="09:00">9:00 AM</SelectItem>
-                        <SelectItem value="09:30">9:30 AM</SelectItem>
-                        <SelectItem value="10:00">10:00 AM</SelectItem>
-                        <SelectItem value="10:30">10:30 AM</SelectItem>
-                        <SelectItem value="11:00">11:00 AM</SelectItem>
-                        <SelectItem value="11:30">11:30 AM</SelectItem>
-                        <SelectItem value="12:00">12:00 PM</SelectItem>
-                        <SelectItem value="12:30">12:30 PM</SelectItem>
-                        <SelectItem value="13:00">1:00 PM</SelectItem>
-                        <SelectItem value="13:30">1:30 PM</SelectItem>
-                        <SelectItem value="14:00">2:00 PM</SelectItem>
-                        <SelectItem value="14:30">2:30 PM</SelectItem>
-                        <SelectItem value="15:00">3:00 PM</SelectItem>
-                        <SelectItem value="15:30">3:30 PM</SelectItem>
-                        <SelectItem value="16:00">4:00 PM</SelectItem>
-                        <SelectItem value="16:30">4:30 PM</SelectItem>
-                        <SelectItem value="17:00">5:00 PM</SelectItem>
-                        <SelectItem value="17:30">5:30 PM</SelectItem>
-                        <SelectItem value="18:00">6:00 PM</SelectItem>
+                        {availableSlots.map((s) => (
+                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
+                    {date && availableSlots.length === 0 && (
+                      <p className="text-xs text-destructive">This provider isn't open on the selected day. Please pick another date.</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Calendar, Clock, Search, MapPin, Star, FileText, MessageSquare, CalendarPlus, CalendarClock, X, Loader2 } from "lucide-react";
 import LeaveReviewDialog from "./LeaveReviewDialog";
 import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
+import ReportIssueDialog from "./ReportIssueDialog";
 import BookingStatusTracker from "./BookingStatusTracker";
 import QuickCategories from "./QuickCategories";
 import RescheduleBookingDialog from "./RescheduleBookingDialog";
@@ -41,6 +42,9 @@ interface Booking {
   business_signature: string | null;
   business_signature_at: string | null;
   business_signature_name: string | null;
+  dispute_status: string | null;
+  dispute_reason: string | null;
+  refunded_amount: number | null;
   created_at: string;
   services: {
     title: string;
@@ -50,6 +54,8 @@ interface Booking {
     business_name: string;
     city: string | null;
     state: string | null;
+    cancellation_window_hours?: number | null;
+    cancellation_fee_pct?: number | null;
   };
   profiles?: { full_name: string | null; email: string } | null;
 }
@@ -79,6 +85,7 @@ const ConsumerDashboard = () => {
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
   const [invoiceBooking, setInvoiceBooking] = useState<Booking | null>(null);
   const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null);
+  const [reportBooking, setReportBooking] = useState<Booking | null>(null);
   const [cancelBooking, setCancelBooking] = useState<Booking | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [chatTarget, setChatTarget] = useState<{ businessId: string; businessName: string } | null>(null);
@@ -115,7 +122,7 @@ const ConsumerDashboard = () => {
         .select(`
           *,
           services (title, category),
-          business_profiles (business_name, city, state)
+          business_profiles (business_name, city, state, cancellation_window_hours, cancellation_fee_pct)
         `)
         .eq("consumer_id", user.id)
         .order("created_at", { ascending: false });
@@ -166,20 +173,43 @@ const ConsumerDashboard = () => {
     });
   };
 
+  const cancelPreview = (() => {
+    if (!cancelBooking) return null;
+    const total = Number(cancelBooking.total_price || 0);
+    const windowHours = Number(cancelBooking.business_profiles.cancellation_window_hours ?? 24);
+    const feePct = Number(cancelBooking.business_profiles.cancellation_fee_pct ?? 50);
+    if (cancelBooking.status === "pending") {
+      return { refund: total, fee: 0, withinWindow: false, message: "Provider hasn't accepted yet — full refund." };
+    }
+    const dt = cancelBooking.scheduled_date && cancelBooking.scheduled_time
+      ? new Date(`${cancelBooking.scheduled_date}T${cancelBooking.scheduled_time}`)
+      : null;
+    const hoursUntil = dt ? (dt.getTime() - Date.now()) / 3_600_000 : Infinity;
+    if (hoursUntil >= windowHours) {
+      return { refund: total, fee: 0, withinWindow: false, message: `Cancelling more than ${windowHours}h ahead — full refund.` };
+    }
+    const refund = total * (100 - feePct) / 100;
+    return { refund, fee: total - refund, withinWindow: true, message: `Within ${windowHours}h of appointment — ${feePct}% cancellation fee applies.` };
+  })();
+
   const handleConfirmCancel = async () => {
     if (!cancelBooking) return;
     setCancelling(true);
     try {
-      const { error } = await supabase
-        .from("bookings")
-        .update({ status: "cancelled" })
-        .eq("id", cancelBooking.id);
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("cancel-booking", {
+        body: { booking_id: cancelBooking.id },
+      });
+      if (error || (data && (data as { error?: string }).error)) {
+        const msg = (data as { error?: string } | null)?.error || error?.message || "Couldn't cancel";
+        throw new Error(msg);
+      }
+      const refunded = Number((data as { refunded?: number } | null)?.refunded || 0);
       toast({
         title: "Booking cancelled",
-        description: "The provider has been notified.",
+        description: refunded > 0 ? `$${refunded.toFixed(2)} will be refunded.` : "The provider has been notified.",
       });
       setCancelBooking(null);
+      fetchBookings();
     } catch (err: any) {
       toast({
         title: "Couldn't cancel",
@@ -438,8 +468,25 @@ const ConsumerDashboard = () => {
                           Review
                         </Button>
                       )}
+                      {booking.status === "completed" && !booking.dispute_status && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setReportBooking(booking)}
+                        >
+                          Report issue
+                        </Button>
+                      )}
                     </div>
                   </div>
+                  {booking.dispute_status === "open" && (
+                    <p className="mt-2 text-xs text-amber-700">Issue reported — awaiting provider response.</p>
+                  )}
+                  {booking.dispute_status === "refunded" && (booking.refunded_amount || 0) > 0 && (
+                    <p className="mt-2 text-xs text-emerald-700">
+                      Refunded ${Number(booking.refunded_amount).toFixed(2)}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -484,10 +531,20 @@ const ConsumerDashboard = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {cancelBooking
-                ? `This will cancel "${cancelBooking.services.title}" with ${cancelBooking.business_profiles.business_name}. This can't be undone.`
-                : ""}
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {cancelBooking && (
+                  <p>
+                    This will cancel "{cancelBooking.services.title}" with {cancelBooking.business_profiles.business_name}.
+                  </p>
+                )}
+                {cancelPreview && (
+                  <div className={`rounded-md border p-3 text-sm ${cancelPreview.withinWindow ? "border-amber-300 bg-amber-50 text-amber-900" : "border-emerald-300 bg-emerald-50 text-emerald-900"}`}>
+                    <p className="font-medium">{cancelPreview.message}</p>
+                    <p className="mt-1">Refund: ${cancelPreview.refund.toFixed(2)}{cancelPreview.fee > 0 ? ` · Fee: $${cancelPreview.fee.toFixed(2)}` : ""}</p>
+                  </div>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -513,6 +570,16 @@ const ConsumerDashboard = () => {
         businessId={chatTarget?.businessId}
         businessName={chatTarget?.businessName}
       />
+
+      {reportBooking && (
+        <ReportIssueDialog
+          open={!!reportBooking}
+          onOpenChange={(open) => !open && setReportBooking(null)}
+          bookingId={reportBooking.id}
+          serviceName={reportBooking.services.title}
+          onReported={fetchBookings}
+        />
+      )}
     </div>
   );
 };
