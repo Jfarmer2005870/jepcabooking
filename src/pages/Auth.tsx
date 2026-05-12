@@ -373,6 +373,33 @@ const Auth = () => {
                     )}
                   </div>
 
+                  {mode === "signup" && (
+                    <div className="space-y-2">
+                      <label className="flex items-start gap-2 text-sm text-muted-foreground cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={acceptedTerms}
+                          onChange={(e) => setAcceptedTerms(e.target.checked)}
+                          className="mt-0.5 rounded border-border accent-primary"
+                        />
+                        <span>
+                          I agree to Jepca's{" "}
+                          <a href="/terms" target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                            Terms of Service
+                          </a>{" "}
+                          and{" "}
+                          <a href="/privacy-policy" target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                            Privacy Policy
+                          </a>
+                          .
+                        </span>
+                      </label>
+                      {errors.terms && (
+                        <p className="text-sm text-destructive">{errors.terms}</p>
+                      )}
+                    </div>
+                  )}
+
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">
