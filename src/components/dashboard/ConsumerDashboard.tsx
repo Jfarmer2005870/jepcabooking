@@ -66,9 +66,26 @@ const ConsumerDashboard = () => {
   const [invoiceBooking, setInvoiceBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
-    if (user) {
-      fetchBookings();
-    }
+    if (!user) return;
+    fetchBookings();
+
+    const channel = supabase
+      .channel("consumer-bookings")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "bookings",
+          filter: `consumer_id=eq.${user.id}`,
+        },
+        () => fetchBookings()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchBookings = async () => {
