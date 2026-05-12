@@ -531,10 +531,20 @@ const ConsumerDashboard = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {cancelBooking
-                ? `This will cancel "${cancelBooking.services.title}" with ${cancelBooking.business_profiles.business_name}. This can't be undone.`
-                : ""}
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {cancelBooking && (
+                  <p>
+                    This will cancel "{cancelBooking.services.title}" with {cancelBooking.business_profiles.business_name}.
+                  </p>
+                )}
+                {cancelPreview && (
+                  <div className={`rounded-md border p-3 text-sm ${cancelPreview.withinWindow ? "border-amber-300 bg-amber-50 text-amber-900" : "border-emerald-300 bg-emerald-50 text-emerald-900"}`}>
+                    <p className="font-medium">{cancelPreview.message}</p>
+                    <p className="mt-1">Refund: ${cancelPreview.refund.toFixed(2)}{cancelPreview.fee > 0 ? ` · Fee: $${cancelPreview.fee.toFixed(2)}` : ""}</p>
+                  </div>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
