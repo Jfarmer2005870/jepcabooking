@@ -6,11 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, Search, MapPin, Star, FileText, MessageSquare } from "lucide-react";
+import { Calendar, Clock, Search, MapPin, Star, FileText, MessageSquare, CalendarPlus } from "lucide-react";
 import LeaveReviewDialog from "./LeaveReviewDialog";
 import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
 import BookingStatusTracker from "./BookingStatusTracker";
 import QuickCategories from "./QuickCategories";
+import { downloadBookingICS } from "@/lib/calendar";
+import { toast } from "@/hooks/use-toast";
 
 interface Booking {
   id: string;
@@ -122,6 +124,30 @@ const ConsumerDashboard = () => {
     e.preventDefault();
     const q = searchQuery.trim();
     navigate(q ? `/services?q=${encodeURIComponent(q)}` : "/services");
+  };
+
+  const handleAddToCalendar = (booking: Booking) => {
+    if (!booking.scheduled_date) {
+      toast({
+        title: "No date scheduled",
+        description: "This booking doesn't have a scheduled date yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+    downloadBookingICS({
+      id: booking.id,
+      title: `${booking.services.title} — ${booking.business_profiles.business_name}`,
+      description: booking.notes || `Booking with ${booking.business_profiles.business_name} via Jepca.`,
+      location: booking.service_address || undefined,
+      date: booking.scheduled_date,
+      time: booking.scheduled_time,
+      durationMinutes: 60,
+    });
+    toast({
+      title: "Calendar event ready",
+      description: "Open the downloaded file to add it to your calendar.",
+    });
   };
 
   return (
@@ -253,6 +279,15 @@ const ConsumerDashboard = () => {
                       >
                         <FileText className="w-4 h-4 mr-1.5" />
                         Details
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleAddToCalendar(booking)}
+                        disabled={!booking.scheduled_date}
+                      >
+                        <CalendarPlus className="w-4 h-4 mr-1.5" />
+                        Add to calendar
                       </Button>
                     </div>
                   </CardContent>
