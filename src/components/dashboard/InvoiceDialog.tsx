@@ -130,16 +130,45 @@ const InvoiceDialog = ({
 
   const role: "business" | "consumer" = viewerRole || (canSign ? "business" : "consumer");
 
+  // Convert stored entry (path or legacy public URL) into a storage path
+  const toPath = (entry: string) => {
+    const marker = "/invoice-photos/";
+    const idx = entry.indexOf(marker);
+    return idx > -1 ? entry.slice(idx + marker.length) : entry;
+  };
+
   useEffect(() => {
     if (!open) {
       setHasDrawn(false);
       setSignerName("");
       setSigDataUrl(null);
+      setSignedUrls({});
     }
     if (booking) {
       setPhotos(booking.invoice_photos || []);
     }
   }, [open, booking]);
+
+  // Generate signed URLs whenever photo list changes
+  useEffect(() => {
+    if (!open || photos.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const paths = photos.map(toPath);
+      const { data, error } = await supabase.storage
+        .from("invoice-photos")
+        .createSignedUrls(paths, 60 * 60);
+      if (cancelled || error || !data) return;
+      const map: Record<string, string> = {};
+      data.forEach((d, i) => {
+        if (d.signedUrl) map[photos[i]] = d.signedUrl;
+      });
+      setSignedUrls(map);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [photos, open]);
 
   if (!booking) return null;
 
