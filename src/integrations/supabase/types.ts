@@ -26,6 +26,9 @@ export type Database = {
           consumer_signature_at: string | null
           consumer_signature_name: string | null
           created_at: string
+          dispute_opened_at: string | null
+          dispute_reason: string | null
+          dispute_resolved_at: string | null
           dispute_status: string | null
           id: string
           invoice_photos: string[]
@@ -57,6 +60,9 @@ export type Database = {
           consumer_signature_at?: string | null
           consumer_signature_name?: string | null
           created_at?: string
+          dispute_opened_at?: string | null
+          dispute_reason?: string | null
+          dispute_resolved_at?: string | null
           dispute_status?: string | null
           id?: string
           invoice_photos?: string[]
@@ -88,6 +94,9 @@ export type Database = {
           consumer_signature_at?: string | null
           consumer_signature_name?: string | null
           created_at?: string
+          dispute_opened_at?: string | null
+          dispute_reason?: string | null
+          dispute_resolved_at?: string | null
           dispute_status?: string | null
           id?: string
           invoice_photos?: string[]
