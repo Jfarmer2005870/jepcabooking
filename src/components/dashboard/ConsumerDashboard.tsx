@@ -173,20 +173,43 @@ const ConsumerDashboard = () => {
     });
   };
 
+  const cancelPreview = (() => {
+    if (!cancelBooking) return null;
+    const total = Number(cancelBooking.total_price || 0);
+    const windowHours = Number(cancelBooking.business_profiles.cancellation_window_hours ?? 24);
+    const feePct = Number(cancelBooking.business_profiles.cancellation_fee_pct ?? 50);
+    if (cancelBooking.status === "pending") {
+      return { refund: total, fee: 0, withinWindow: false, message: "Provider hasn't accepted yet — full refund." };
+    }
+    const dt = cancelBooking.scheduled_date && cancelBooking.scheduled_time
+      ? new Date(`${cancelBooking.scheduled_date}T${cancelBooking.scheduled_time}`)
+      : null;
+    const hoursUntil = dt ? (dt.getTime() - Date.now()) / 3_600_000 : Infinity;
+    if (hoursUntil >= windowHours) {
+      return { refund: total, fee: 0, withinWindow: false, message: `Cancelling more than ${windowHours}h ahead — full refund.` };
+    }
+    const refund = total * (100 - feePct) / 100;
+    return { refund, fee: total - refund, withinWindow: true, message: `Within ${windowHours}h of appointment — ${feePct}% cancellation fee applies.` };
+  })();
+
   const handleConfirmCancel = async () => {
     if (!cancelBooking) return;
     setCancelling(true);
     try {
-      const { error } = await supabase
-        .from("bookings")
-        .update({ status: "cancelled" })
-        .eq("id", cancelBooking.id);
-      if (error) throw error;
+      const { data, error } = await supabase.functions.invoke("cancel-booking", {
+        body: { booking_id: cancelBooking.id },
+      });
+      if (error || (data && (data as { error?: string }).error)) {
+        const msg = (data as { error?: string } | null)?.error || error?.message || "Couldn't cancel";
+        throw new Error(msg);
+      }
+      const refunded = Number((data as { refunded?: number } | null)?.refunded || 0);
       toast({
         title: "Booking cancelled",
-        description: "The provider has been notified.",
+        description: refunded > 0 ? `$${refunded.toFixed(2)} will be refunded.` : "The provider has been notified.",
       });
       setCancelBooking(null);
+      fetchBookings();
     } catch (err: any) {
       toast({
         title: "Couldn't cancel",
