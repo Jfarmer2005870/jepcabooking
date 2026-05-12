@@ -328,6 +328,27 @@ const ConsumerDashboard = () => {
                         <CalendarPlus className="w-4 h-4 mr-1.5" />
                         Add to calendar
                       </Button>
+                      {booking.status === "pending" && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setRescheduleBooking(booking)}
+                          >
+                            <CalendarClock className="w-4 h-4 mr-1.5" />
+                            Reschedule
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => setCancelBooking(booking)}
+                          >
+                            <X className="w-4 h-4 mr-1.5" />
+                            Cancel
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </div>
