@@ -387,7 +387,13 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
                       <div>
                         <CardTitle className="text-lg">{service.title}</CardTitle>
                         <CardDescription className="flex items-center gap-1 mt-1">
-                          {service.business_profiles.business_name}
+                          <Link
+                            to={`/provider/${service.business_profiles.id}`}
+                            className="hover:text-primary hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {service.business_profiles.business_name}
+                          </Link>
                           {service.business_profiles.is_verified && (
                             <Badge variant="secondary" className="text-xs">Verified</Badge>
                           )}
