@@ -8,10 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  MapPin, 
-  Star, 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Search,
+  MapPin,
+  Star,
   Filter,
   Sparkles,
   Wrench,
@@ -21,7 +24,9 @@ import {
   Truck,
   Hammer,
   Wind,
-  Bug
+  Bug,
+  X,
+  ShieldCheck,
 } from "lucide-react";
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -74,7 +79,12 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  
+  const [sortBy, setSortBy] = useState<"newest" | "price_asc" | "price_desc" | "rating">("newest");
+  const [maxPrice, setMaxPrice] = useState<string>("");
+  const [minRating, setMinRating] = useState<string>("0");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+
   // Get category from URL params
   const categoryFromUrl = searchParams.get("category");
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryFromUrl);
@@ -126,26 +136,61 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
     }
   };
 
-  const filteredServices = services.filter((service) => {
-    const matchesSearch = 
-      service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.business_profiles.business_name.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = !selectedCategory || service.category === selectedCategory;
+  const priceWithFee = (s: Service) => {
+    const base = s.price_min ?? s.price_max ?? null;
+    return base !== null ? base * 1.05 : null;
+  };
 
-    return matchesSearch && matchesCategory;
-  });
+  const filteredServices = services
+    .filter((service) => {
+      const matchesSearch =
+        service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.business_profiles.business_name.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesCategory = !selectedCategory || service.category === selectedCategory;
+
+      const p = priceWithFee(service);
+      const matchesPrice = !maxPrice || p === null || p <= Number(maxPrice);
+
+      const r = service.business_profiles.rating ?? 0;
+      const matchesRating = r >= Number(minRating);
+
+      const matchesVerified = !verifiedOnly || !!service.business_profiles.is_verified;
+
+      return matchesSearch && matchesCategory && matchesPrice && matchesRating && matchesVerified;
+    })
+    .sort((a, b) => {
+      if (sortBy === "rating") {
+        return (b.business_profiles.rating ?? 0) - (a.business_profiles.rating ?? 0);
+      }
+      if (sortBy === "price_asc" || sortBy === "price_desc") {
+        const pa = priceWithFee(a) ?? Number.MAX_SAFE_INTEGER;
+        const pb = priceWithFee(b) ?? Number.MAX_SAFE_INTEGER;
+        return sortBy === "price_asc" ? pa - pb : pb - pa;
+      }
+      return 0;
+    });
+
+  const activeFilterCount =
+    (maxPrice ? 1 : 0) + (Number(minRating) > 0 ? 1 : 0) + (verifiedOnly ? 1 : 0);
+
+  const clearFilters = () => {
+    setMaxPrice("");
+    setMinRating("0");
+    setVerifiedOnly(false);
+    setSortBy("newest");
+  };
 
   const formatPrice = (service: Service) => {
     if (!service.price_min && !service.price_max) return "Get Quote";
     if (service.price_type === "quote") return "Get Quote";
-    
+
     const fee = 1.05; // 5% platform fee
     const min = service.price_min ? `$${(service.price_min * fee).toFixed(2)}` : "";
     const max = service.price_max ? `$${(service.price_max * fee).toFixed(2)}` : "";
     const type = service.price_type === "hourly" ? "/hr" : "";
-    
+
     if (min && max && min !== max) return `${min} - ${max}${type}`;
     return `${min || max}${type}`;
   };
@@ -211,6 +256,86 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
           </div>
         </div>
 
+        {/* Sort & Filters */}
+        <div className="container mx-auto px-4 pt-6">
+          <div className="flex flex-wrap items-center gap-3 justify-between">
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground">
+                {loading ? "Loading…" : `${filteredServices.length} ${filteredServices.length === 1 ? "result" : "results"}`}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters((v) => !v)}
+                className="gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 px-1.5 py-0 h-5">{activeFilterCount}</Badge>
+                )}
+              </Button>
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
+                  <X className="w-3.5 h-3.5" /> Clear
+                </Button>
+              )}
+            </div>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest first</SelectItem>
+                <SelectItem value="rating">Top rated</SelectItem>
+                <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                <SelectItem value="price_desc">Price: High to Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {showFilters && (
+            <div className="mt-4 p-4 rounded-xl border border-border bg-card grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="maxPrice" className="text-sm">Max price ($)</Label>
+                <Input
+                  id="maxPrice"
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="Any"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="minRating" className="text-sm">Minimum rating</Label>
+                <Select value={minRating} onValueChange={setMinRating}>
+                  <SelectTrigger id="minRating">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Any rating</SelectItem>
+                    <SelectItem value="3">3+ stars</SelectItem>
+                    <SelectItem value="4">4+ stars</SelectItem>
+                    <SelectItem value="4.5">4.5+ stars</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="verified" className="text-sm flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-primary" /> Verified only
+                </Label>
+                <div className="flex items-center h-10 gap-2">
+                  <Switch id="verified" checked={verifiedOnly} onCheckedChange={setVerifiedOnly} />
+                  <span className="text-sm text-muted-foreground">
+                    {verifiedOnly ? "Showing verified providers" : "All providers"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Services Grid */}
         <div className="container mx-auto px-4 py-8">
           {loading ? (
@@ -229,16 +354,29 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
               ))}
             </div>
           ) : filteredServices.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-secondary mx-auto mb-4 flex items-center justify-center">
-                <Search className="w-8 h-8 text-muted-foreground" />
+            <div className="text-center py-16 max-w-md mx-auto">
+              <div className="w-20 h-20 rounded-full bg-secondary mx-auto mb-5 flex items-center justify-center">
+                <Search className="w-9 h-9 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No services found</h3>
-              <p className="text-muted-foreground">
-                {searchQuery || selectedCategory
-                  ? "Try adjusting your search or filters"
-                  : "Be the first to list a service!"}
+              <h3 className="text-xl font-semibold text-foreground mb-2 font-display">No matches found</h3>
+              <p className="text-muted-foreground mb-5">
+                {searchQuery || selectedCategory || activeFilterCount > 0
+                  ? "Try removing a filter or searching for a different keyword."
+                  : "There are no active services yet. Check back soon!"}
               </p>
+              {(searchQuery || selectedCategory || activeFilterCount > 0) && (
+                <div className="flex items-center justify-center gap-2">
+                  {searchQuery && (
+                    <Button variant="outline" size="sm" onClick={() => setSearchQuery("")}>Clear search</Button>
+                  )}
+                  {selectedCategory && (
+                    <Button variant="outline" size="sm" onClick={() => handleCategoryChange(null)}>All categories</Button>
+                  )}
+                  {activeFilterCount > 0 && (
+                    <Button variant="outline" size="sm" onClick={clearFilters}>Reset filters</Button>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -249,7 +387,13 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
                       <div>
                         <CardTitle className="text-lg">{service.title}</CardTitle>
                         <CardDescription className="flex items-center gap-1 mt-1">
-                          {service.business_profiles.business_name}
+                          <Link
+                            to={`/provider/${service.business_profiles.id}`}
+                            className="hover:text-primary hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {service.business_profiles.business_name}
+                          </Link>
                           {service.business_profiles.is_verified && (
                             <Badge variant="secondary" className="text-xs">Verified</Badge>
                           )}

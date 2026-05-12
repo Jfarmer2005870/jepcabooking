@@ -11,6 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
+import ProviderProfile from "./pages/ProviderProfile";
+import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -46,6 +48,8 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/services" element={<Services />} />
               <Route path="/services/:id" element={<ServiceDetail />} />
+              <Route path="/provider/:id" element={<ProviderProfile />} />
+              <Route path="/help" element={<Help />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/cookies" element={<CookiePolicy />} />

@@ -19,6 +19,7 @@ const Footer = forwardRef<HTMLElement>((props, ref) => {
       { label: "Pricing & fees", href: "/pricing", isRoute: true },
       { label: "Browse services", href: "/services", isRoute: true },
       { label: "Become a provider", href: "/auth?mode=signup&role=business", isRoute: true },
+      { label: "Help & FAQ", href: "/help", isRoute: true },
       { label: "Contact support", href: "mailto:support@jepca.app" },
     ],
     legal: [
