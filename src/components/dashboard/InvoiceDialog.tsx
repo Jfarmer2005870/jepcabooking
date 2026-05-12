@@ -428,11 +428,11 @@ const InvoiceDialog = ({
                   <div key={url} className="relative group aspect-square">
                     <button
                       type="button"
-                      onClick={() => setLightbox(url)}
+                      onClick={() => setLightbox(signedUrls[url] || url)}
                       className="block w-full h-full"
                     >
                       <img
-                        src={url}
+                        src={signedUrls[url] || ""}
                         alt="Invoice attachment"
                         className="w-full h-full object-cover rounded-md border"
                       />
