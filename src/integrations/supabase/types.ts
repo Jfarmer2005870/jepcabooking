@@ -22,9 +22,13 @@ export type Database = {
           business_signature_at: string | null
           business_signature_name: string | null
           consumer_id: string
+          consumer_signature: string | null
+          consumer_signature_at: string | null
+          consumer_signature_name: string | null
           created_at: string
           dispute_status: string | null
           id: string
+          invoice_photos: string[]
           notes: string | null
           payment_intent_id: string | null
           payment_status: string | null
@@ -49,9 +53,13 @@ export type Database = {
           business_signature_at?: string | null
           business_signature_name?: string | null
           consumer_id: string
+          consumer_signature?: string | null
+          consumer_signature_at?: string | null
+          consumer_signature_name?: string | null
           created_at?: string
           dispute_status?: string | null
           id?: string
+          invoice_photos?: string[]
           notes?: string | null
           payment_intent_id?: string | null
           payment_status?: string | null
@@ -76,9 +84,13 @@ export type Database = {
           business_signature_at?: string | null
           business_signature_name?: string | null
           consumer_id?: string
+          consumer_signature?: string | null
+          consumer_signature_at?: string | null
+          consumer_signature_name?: string | null
           created_at?: string
           dispute_status?: string | null
           id?: string
+          invoice_photos?: string[]
           notes?: string | null
           payment_intent_id?: string | null
           payment_status?: string | null
