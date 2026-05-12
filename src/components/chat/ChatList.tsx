@@ -51,21 +51,21 @@ const ChatList = ({ onSelectConversation, selectedConversationId }: ChatListProp
           let otherPartyName = "";
           
           if (userRole === "consumer") {
-            // Consumer sees business name
+            // Consumer sees business name (public view excludes stripe_account_id)
             const { data: business } = await supabase
-              .from("business_profiles")
+              .from("public_business_profiles" as any)
               .select("business_name")
               .eq("id", convo.business_id)
               .maybeSingle();
-            otherPartyName = business?.business_name || "Business";
+            otherPartyName = (business as any)?.business_name || "Business";
           } else {
-            // Business sees consumer name
+            // Business sees consumer name via public profile view
             const { data: profile } = await supabase
-              .from("profiles")
-              .select("full_name, email")
+              .from("public_profiles" as any)
+              .select("full_name")
               .eq("user_id", convo.consumer_id)
               .maybeSingle();
-            otherPartyName = profile?.full_name || profile?.email || "Customer";
+            otherPartyName = (profile as any)?.full_name || "Customer";
           }
 
           // Get last message
