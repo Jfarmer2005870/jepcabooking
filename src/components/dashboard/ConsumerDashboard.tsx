@@ -164,7 +164,30 @@ const ConsumerDashboard = () => {
     });
   };
 
-  return (
+  const handleConfirmCancel = async () => {
+    if (!cancelBooking) return;
+    setCancelling(true);
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", cancelBooking.id);
+      if (error) throw error;
+      toast({
+        title: "Booking cancelled",
+        description: "The provider has been notified.",
+      });
+      setCancelBooking(null);
+    } catch (err: any) {
+      toast({
+        title: "Couldn't cancel",
+        description: err.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCancelling(false);
+    }
+  };
     <div className="space-y-8">
       {/* Welcome + Search */}
       <div className="space-y-4">
