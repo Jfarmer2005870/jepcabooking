@@ -120,7 +120,7 @@ const ConsumerDashboard = () => {
         .select(`
           *,
           services (title, category),
-          business_profiles (business_name, city, state)
+          business_profiles (business_name, city, state, cancellation_window_hours, cancellation_fee_pct)
         `)
         .eq("consumer_id", user.id)
         .order("created_at", { ascending: false });
