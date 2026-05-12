@@ -123,6 +123,7 @@ const InvoiceDialog = ({
   const [hasDrawn, setHasDrawn] = useState(false);
   const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
