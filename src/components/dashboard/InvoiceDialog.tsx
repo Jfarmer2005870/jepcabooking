@@ -664,7 +664,11 @@ const InvoiceDialog = ({
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-2">
+          <Button variant="outline" onClick={downloadPdf} disabled={downloading}>
+            {downloading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+            Download PDF
+          </Button>
           {showAnyPad && (showProviderPad || (showConsumerPad && booking.business_signature)) ? (
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
