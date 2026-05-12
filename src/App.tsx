@@ -11,6 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
+import ProviderProfile from "./pages/ProviderProfile";
+import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
 import Terms from "./pages/Terms";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
