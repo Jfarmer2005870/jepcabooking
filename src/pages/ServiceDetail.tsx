@@ -109,6 +109,11 @@ const ServiceDetail = () => {
   const [availability, setAvailability] = useState<{ weekday: number; start_time: string; end_time: string }[]>([]);
 
   useEffect(() => {
+    if (time && !availableSlots.find((s) => s.value === time)) setTime("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, availability]);
+
+  useEffect(() => {
     if (id) {
       fetchService();
     }
