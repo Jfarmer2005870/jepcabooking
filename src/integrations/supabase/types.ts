@@ -145,6 +145,8 @@ export type Database = {
         Row: {
           address: string | null
           business_name: string
+          cancellation_fee_pct: number
+          cancellation_window_hours: number
           city: string | null
           created_at: string
           description: string | null
@@ -168,6 +170,8 @@ export type Database = {
         Insert: {
           address?: string | null
           business_name: string
+          cancellation_fee_pct?: number
+          cancellation_window_hours?: number
           city?: string | null
           created_at?: string
           description?: string | null
@@ -191,6 +195,8 @@ export type Database = {
         Update: {
           address?: string | null
           business_name?: string
+          cancellation_fee_pct?: number
+          cancellation_window_hours?: number
           city?: string | null
           created_at?: string
           description?: string | null
