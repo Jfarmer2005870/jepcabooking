@@ -280,6 +280,15 @@ const ConsumerDashboard = () => {
                         <FileText className="w-4 h-4 mr-1.5" />
                         Details
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleAddToCalendar(booking)}
+                        disabled={!booking.scheduled_date}
+                      >
+                        <CalendarPlus className="w-4 h-4 mr-1.5" />
+                        Add to calendar
+                      </Button>
                     </div>
                   </CardContent>
                 </div>
