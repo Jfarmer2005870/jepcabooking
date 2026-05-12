@@ -256,6 +256,86 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
           </div>
         </div>
 
+        {/* Sort & Filters */}
+        <div className="container mx-auto px-4 pt-6">
+          <div className="flex flex-wrap items-center gap-3 justify-between">
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-muted-foreground">
+                {loading ? "Loading…" : `${filteredServices.length} ${filteredServices.length === 1 ? "result" : "results"}`}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters((v) => !v)}
+                className="gap-2"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-1 px-1.5 py-0 h-5">{activeFilterCount}</Badge>
+                )}
+              </Button>
+              {activeFilterCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
+                  <X className="w-3.5 h-3.5" /> Clear
+                </Button>
+              )}
+            </div>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+              <SelectTrigger className="w-[180px] h-9">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest first</SelectItem>
+                <SelectItem value="rating">Top rated</SelectItem>
+                <SelectItem value="price_asc">Price: Low to High</SelectItem>
+                <SelectItem value="price_desc">Price: High to Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {showFilters && (
+            <div className="mt-4 p-4 rounded-xl border border-border bg-card grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="maxPrice" className="text-sm">Max price ($)</Label>
+                <Input
+                  id="maxPrice"
+                  type="number"
+                  inputMode="numeric"
+                  placeholder="Any"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="minRating" className="text-sm">Minimum rating</Label>
+                <Select value={minRating} onValueChange={setMinRating}>
+                  <SelectTrigger id="minRating">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">Any rating</SelectItem>
+                    <SelectItem value="3">3+ stars</SelectItem>
+                    <SelectItem value="4">4+ stars</SelectItem>
+                    <SelectItem value="4.5">4.5+ stars</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="verified" className="text-sm flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-primary" /> Verified only
+                </Label>
+                <div className="flex items-center h-10 gap-2">
+                  <Switch id="verified" checked={verifiedOnly} onCheckedChange={setVerifiedOnly} />
+                  <span className="text-sm text-muted-foreground">
+                    {verifiedOnly ? "Showing verified providers" : "All providers"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Services Grid */}
         <div className="container mx-auto px-4 py-8">
           {loading ? (
@@ -274,16 +354,29 @@ const Services = forwardRef<HTMLDivElement>((_, ref) => {
               ))}
             </div>
           ) : filteredServices.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 rounded-full bg-secondary mx-auto mb-4 flex items-center justify-center">
-                <Search className="w-8 h-8 text-muted-foreground" />
+            <div className="text-center py-16 max-w-md mx-auto">
+              <div className="w-20 h-20 rounded-full bg-secondary mx-auto mb-5 flex items-center justify-center">
+                <Search className="w-9 h-9 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">No services found</h3>
-              <p className="text-muted-foreground">
-                {searchQuery || selectedCategory
-                  ? "Try adjusting your search or filters"
-                  : "Be the first to list a service!"}
+              <h3 className="text-xl font-semibold text-foreground mb-2 font-display">No matches found</h3>
+              <p className="text-muted-foreground mb-5">
+                {searchQuery || selectedCategory || activeFilterCount > 0
+                  ? "Try removing a filter or searching for a different keyword."
+                  : "There are no active services yet. Check back soon!"}
               </p>
+              {(searchQuery || selectedCategory || activeFilterCount > 0) && (
+                <div className="flex items-center justify-center gap-2">
+                  {searchQuery && (
+                    <Button variant="outline" size="sm" onClick={() => setSearchQuery("")}>Clear search</Button>
+                  )}
+                  {selectedCategory && (
+                    <Button variant="outline" size="sm" onClick={() => handleCategoryChange(null)}>All categories</Button>
+                  )}
+                  {activeFilterCount > 0 && (
+                    <Button variant="outline" size="sm" onClick={clearFilters}>Reset filters</Button>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
