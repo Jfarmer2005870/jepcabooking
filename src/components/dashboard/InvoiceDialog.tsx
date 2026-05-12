@@ -195,8 +195,7 @@ const InvoiceDialog = ({
           .from("invoice-photos")
           .upload(path, file, { upsert: false, contentType: file.type });
         if (upErr) throw upErr;
-        const { data } = supabase.storage.from("invoice-photos").getPublicUrl(path);
-        uploaded.push(data.publicUrl);
+        uploaded.push(path);
       }
       const next = [...photos, ...uploaded];
       const { error } = await supabase
