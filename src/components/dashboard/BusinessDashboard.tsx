@@ -28,6 +28,7 @@ import AddServiceDialog from "./AddServiceDialog";
 import AISummarizeNotes from "./AISummarizeNotes";
 import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
 import RefundDialog from "./RefundDialog";
+import ProviderAvailabilityEditor from "./ProviderAvailabilityEditor";
 
 interface BusinessProfile {
   id: string;
