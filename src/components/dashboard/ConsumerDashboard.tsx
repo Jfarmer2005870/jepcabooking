@@ -506,6 +506,13 @@ const ConsumerDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ChatDialog
+        open={!!chatTarget}
+        onOpenChange={(open) => !open && setChatTarget(null)}
+        businessId={chatTarget?.businessId}
+        businessName={chatTarget?.businessName}
+      />
     </div>
   );
 };
