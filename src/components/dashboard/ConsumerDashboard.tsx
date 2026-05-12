@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Search, MapPin, Star, ArrowRight, FileText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Calendar, Clock, Search, MapPin, Star, FileText, MessageSquare } from "lucide-react";
 import LeaveReviewDialog from "./LeaveReviewDialog";
 import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
+import BookingStatusTracker from "./BookingStatusTracker";
+import QuickCategories from "./QuickCategories";
 
 interface Booking {
   id: string;
@@ -55,8 +58,10 @@ const statusLabels: Record<string, string> = {
 
 const ConsumerDashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
   const [invoiceBooking, setInvoiceBooking] = useState<Booking | null>(null);
 
@@ -89,40 +94,169 @@ const ConsumerDashboard = () => {
     }
   };
 
-  const upcomingBookings = bookings.filter(
-    (b) => b.status === "pending" || b.status === "confirmed"
+  const activeBookings = bookings.filter(
+    (b) => b.status === "pending" || b.status === "confirmed" || b.status === "in_progress"
   );
   const pastBookings = bookings.filter(
     (b) => b.status === "completed" || b.status === "cancelled"
   );
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    navigate(q ? `/services?q=${encodeURIComponent(q)}` : "/services");
+  };
+
   return (
     <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      {/* Welcome + Search */}
+      <div className="space-y-4">
         <div>
-          <h1 className="text-3xl font-bold font-display text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Manage your bookings and find new services</p>
+          <h1 className="text-3xl font-bold font-display text-foreground">
+            What do you need today?
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Book a trusted local pro in seconds
+          </p>
         </div>
-        <Button asChild>
-          <Link to="/services">
-            <Search className="w-4 h-4 mr-2" />
-            Find Services
-          </Link>
-        </Button>
+
+        <form onSubmit={handleSearch} className="relative max-w-2xl">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Input
+            placeholder="Search cleaning, plumbing, electrician…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 pr-28 h-14 text-base rounded-full shadow-sm"
+          />
+          <Button
+            type="submit"
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full h-11"
+          >
+            Search
+          </Button>
+        </form>
+
+        {/* Quick categories */}
+        <QuickCategories />
+      </div>
+
+      {/* Active Bookings — Uber Eats style tracker */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold font-display text-foreground">
+            Active bookings
+          </h2>
+          {activeBookings.length > 0 && (
+            <Badge variant="secondary" className="rounded-full">
+              {activeBookings.length} active
+            </Badge>
+          )}
+        </div>
+
+        {loading ? (
+          <Card className="animate-pulse">
+            <CardHeader>
+              <div className="h-5 bg-muted rounded w-2/3 mb-2"></div>
+              <div className="h-4 bg-muted rounded w-1/2"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-12 bg-muted rounded w-full"></div>
+            </CardContent>
+          </Card>
+        ) : activeBookings.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center">
+              <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-semibold text-foreground mb-2">No active bookings</h3>
+              <p className="text-muted-foreground mb-4">
+                Find and book services from trusted local providers
+              </p>
+              <Button asChild>
+                <Link to="/services">Browse services</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {activeBookings.map((booking) => (
+              <Card key={booking.id} className="overflow-hidden">
+                <div className="border-l-4 border-primary">
+                  <CardHeader className="pb-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <CardTitle className="text-lg truncate">
+                          {booking.services.title}
+                        </CardTitle>
+                        <CardDescription className="truncate">
+                          {booking.business_profiles.business_name}
+                        </CardDescription>
+                      </div>
+                      {booking.total_price && (
+                        <span className="text-lg font-bold text-primary whitespace-nowrap">
+                          ${booking.total_price.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <BookingStatusTracker status={booking.status} />
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground pt-2 border-t border-border">
+                      {booking.scheduled_date && (
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="w-4 h-4" />
+                          {new Date(booking.scheduled_date).toLocaleDateString()}
+                        </span>
+                      )}
+                      {booking.scheduled_time && (
+                        <span className="flex items-center gap-1.5">
+                          <Clock className="w-4 h-4" />
+                          {booking.scheduled_time}
+                        </span>
+                      )}
+                      {booking.service_address && (
+                        <span className="flex items-center gap-1.5 truncate max-w-xs">
+                          <MapPin className="w-4 h-4 shrink-0" />
+                          <span className="truncate">{booking.service_address}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link to="/dashboard?tab=messages">
+                          <MessageSquare className="w-4 h-4 mr-1.5" />
+                          Message provider
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setInvoiceBooking(booking)}
+                      >
+                        <FileText className="w-4 h-4 mr-1.5" />
+                        Details
+                      </Button>
+                    </div>
+                  </CardContent>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Quick Stats */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Upcoming Bookings</CardDescription>
-            <CardTitle className="text-3xl">{upcomingBookings.length}</CardTitle>
+            <CardDescription>Active</CardDescription>
+            <CardTitle className="text-3xl">{activeBookings.length}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Completed Services</CardDescription>
+            <CardDescription>Completed</CardDescription>
             <CardTitle className="text-3xl">
               {bookings.filter((b) => b.status === "completed").length}
             </CardTitle>
@@ -130,7 +264,7 @@ const ConsumerDashboard = () => {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Total Spent</CardDescription>
+            <CardDescription>Total spent</CardDescription>
             <CardTitle className="text-3xl">
               ${bookings
                 .filter((b) => b.status === "completed")
@@ -139,86 +273,6 @@ const ConsumerDashboard = () => {
             </CardTitle>
           </CardHeader>
         </Card>
-      </div>
-
-      {/* Upcoming Bookings */}
-      <div>
-        <h2 className="text-xl font-semibold font-display text-foreground mb-4">
-          Upcoming Bookings
-        </h2>
-        {loading ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {[...Array(2)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader>
-                  <div className="h-5 bg-muted rounded w-2/3 mb-2"></div>
-                  <div className="h-4 bg-muted rounded w-1/2"></div>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-4 bg-muted rounded w-full"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : upcomingBookings.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-semibold text-foreground mb-2">No upcoming bookings</h3>
-              <p className="text-muted-foreground mb-4">
-                Find and book services from trusted local providers
-              </p>
-              <Button asChild>
-                <Link to="/services">Browse Services</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {upcomingBookings.map((booking) => (
-              <Card key={booking.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{booking.services.title}</CardTitle>
-                      <CardDescription>{booking.business_profiles.business_name}</CardDescription>
-                    </div>
-                    <Badge className={statusColors[booking.status]}>
-                      {statusLabels[booking.status]}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    {booking.scheduled_date && (
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {new Date(booking.scheduled_date).toLocaleDateString()}
-                      </span>
-                    )}
-                    {booking.scheduled_time && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {booking.scheduled_time}
-                      </span>
-                    )}
-                    {booking.business_profiles.city && (
-                      <span className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        {booking.business_profiles.city}
-                      </span>
-                    )}
-                  </div>
-                  {booking.total_price && (
-                    <p className="mt-3 font-semibold text-primary">
-                      ${booking.total_price.toFixed(2)}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Past Bookings */}
