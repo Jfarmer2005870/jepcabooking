@@ -54,6 +54,8 @@ interface Booking {
     business_name: string;
     city: string | null;
     state: string | null;
+    cancellation_window_hours?: number | null;
+    cancellation_fee_pct?: number | null;
   };
   profiles?: { full_name: string | null; email: string } | null;
 }
