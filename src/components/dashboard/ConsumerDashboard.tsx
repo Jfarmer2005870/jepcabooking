@@ -6,11 +6,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, Search, MapPin, Star, FileText, MessageSquare, CalendarPlus } from "lucide-react";
+import { Calendar, Clock, Search, MapPin, Star, FileText, MessageSquare, CalendarPlus, CalendarClock, X, Loader2 } from "lucide-react";
 import LeaveReviewDialog from "./LeaveReviewDialog";
 import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
 import BookingStatusTracker from "./BookingStatusTracker";
 import QuickCategories from "./QuickCategories";
+import RescheduleBookingDialog from "./RescheduleBookingDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { downloadBookingICS } from "@/lib/calendar";
 import { toast } from "@/hooks/use-toast";
 
@@ -66,6 +77,9 @@ const ConsumerDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
   const [invoiceBooking, setInvoiceBooking] = useState<Booking | null>(null);
+  const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null);
+  const [cancelBooking, setCancelBooking] = useState<Booking | null>(null);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -148,6 +162,31 @@ const ConsumerDashboard = () => {
       title: "Calendar event ready",
       description: "Open the downloaded file to add it to your calendar.",
     });
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancelBooking) return;
+    setCancelling(true);
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", cancelBooking.id);
+      if (error) throw error;
+      toast({
+        title: "Booking cancelled",
+        description: "The provider has been notified.",
+      });
+      setCancelBooking(null);
+    } catch (err: any) {
+      toast({
+        title: "Couldn't cancel",
+        description: err.message || "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCancelling(false);
+    }
   };
 
   return (
@@ -289,6 +328,27 @@ const ConsumerDashboard = () => {
                         <CalendarPlus className="w-4 h-4 mr-1.5" />
                         Add to calendar
                       </Button>
+                      {booking.status === "pending" && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setRescheduleBooking(booking)}
+                          >
+                            <CalendarClock className="w-4 h-4 mr-1.5" />
+                            Reschedule
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => setCancelBooking(booking)}
+                          >
+                            <X className="w-4 h-4 mr-1.5" />
+                            Cancel
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </div>
@@ -397,6 +457,46 @@ const ConsumerDashboard = () => {
         onOpenChange={(open) => !open && setInvoiceBooking(null)}
         booking={invoiceBooking as unknown as InvoiceBooking}
       />
+
+      {rescheduleBooking && (
+        <RescheduleBookingDialog
+          open={!!rescheduleBooking}
+          onOpenChange={(open) => !open && setRescheduleBooking(null)}
+          bookingId={rescheduleBooking.id}
+          currentDate={rescheduleBooking.scheduled_date}
+          currentTime={rescheduleBooking.scheduled_time}
+        />
+      )}
+
+      <AlertDialog
+        open={!!cancelBooking}
+        onOpenChange={(open) => !open && !cancelling && setCancelBooking(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {cancelBooking
+                ? `This will cancel "${cancelBooking.services.title}" with ${cancelBooking.business_profiles.business_name}. This can't be undone.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={cancelling}>Keep booking</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmCancel();
+              }}
+              disabled={cancelling}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {cancelling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Yes, cancel
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
