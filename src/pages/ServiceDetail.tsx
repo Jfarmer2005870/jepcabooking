@@ -164,12 +164,49 @@ const ServiceDetail = () => {
 
       if (error) throw error;
       setService(data);
+      if (data?.business_profiles?.id) {
+        const { data: avail } = await supabase
+          .from("provider_availability")
+          .select("weekday, start_time, end_time")
+          .eq("business_id", data.business_profiles.id);
+        setAvailability((avail || []).map((a) => ({
+          weekday: a.weekday,
+          start_time: a.start_time.slice(0, 5),
+          end_time: a.end_time.slice(0, 5),
+        })));
+      }
     } catch (error) {
       console.error("Error fetching service:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  // All possible 30-min slots from 08:00 to 18:00
+  const ALL_SLOTS: { value: string; label: string }[] = (() => {
+    const out: { value: string; label: string }[] = [];
+    for (let h = 8; h <= 18; h++) {
+      for (const m of [0, 30]) {
+        if (h === 18 && m > 0) break;
+        const v = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+        const ampm = h < 12 ? "AM" : "PM";
+        const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+        out.push({ value: v, label: `${h12}:${String(m).padStart(2, "0")} ${ampm}` });
+      }
+    }
+    return out;
+  })();
+
+  const availableSlots = (() => {
+    if (!date) return ALL_SLOTS;
+    if (availability.length === 0) return ALL_SLOTS; // provider hasn't set hours = open
+    const wd = date.getDay();
+    const windows = availability.filter((a) => a.weekday === wd);
+    if (windows.length === 0) return [];
+    return ALL_SLOTS.filter((s) =>
+      windows.some((w) => s.value >= w.start_time && s.value < w.end_time)
+    );
+  })();
 
   const handleBooking = async () => {
     if (!user) {
