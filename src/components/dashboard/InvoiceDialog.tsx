@@ -224,12 +224,7 @@ const InvoiceDialog = ({
       if (error) throw error;
       // Best-effort delete from storage
       try {
-        const marker = "/invoice-photos/";
-        const idx = url.indexOf(marker);
-        if (idx > -1) {
-          const path = url.slice(idx + marker.length);
-          await supabase.storage.from("invoice-photos").remove([path]);
-        }
+        await supabase.storage.from("invoice-photos").remove([toPath(url)]);
       } catch {}
       setPhotos(next);
       onUpdated?.();
