@@ -12,6 +12,7 @@ import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
 import BookingStatusTracker from "./BookingStatusTracker";
 import QuickCategories from "./QuickCategories";
 import RescheduleBookingDialog from "./RescheduleBookingDialog";
+import ChatDialog from "@/components/chat/ChatDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -80,6 +81,7 @@ const ConsumerDashboard = () => {
   const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null);
   const [cancelBooking, setCancelBooking] = useState<Booking | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [chatTarget, setChatTarget] = useState<{ businessId: string; businessName: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -305,11 +307,18 @@ const ConsumerDashboard = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to="/dashboard?tab=messages">
-                          <MessageSquare className="w-4 h-4 mr-1.5" />
-                          Message provider
-                        </Link>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          setChatTarget({
+                            businessId: booking.business_id,
+                            businessName: booking.business_profiles.business_name,
+                          })
+                        }
+                      >
+                        <MessageSquare className="w-4 h-4 mr-1.5" />
+                        Message provider
                       </Button>
                       <Button
                         variant="ghost"
@@ -497,6 +506,13 @@ const ConsumerDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ChatDialog
+        open={!!chatTarget}
+        onOpenChange={(open) => !open && setChatTarget(null)}
+        businessId={chatTarget?.businessId}
+        businessName={chatTarget?.businessName}
+      />
     </div>
   );
 };
