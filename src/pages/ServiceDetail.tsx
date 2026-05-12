@@ -142,7 +142,7 @@ const ServiceDetail = () => {
         .from("services")
         .select(`
           *,
-          business_profiles:public_business_profiles!business_id (
+          business_profiles (
             id,
             business_name,
             description,

@@ -108,13 +108,6 @@ export type Database = {
             foreignKeyName: "bookings_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
-            referencedRelation: "my_business_profile"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
             referencedRelation: "public_business_profiles"
             referencedColumns: ["id"]
           },
@@ -237,13 +230,6 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "business_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conversations_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "my_business_profile"
             referencedColumns: ["id"]
           },
           {
@@ -505,13 +491,6 @@ export type Database = {
             foreignKeyName: "reviews_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
-            referencedRelation: "my_business_profile"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reviews_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
             referencedRelation: "public_business_profiles"
             referencedColumns: ["id"]
           },
@@ -572,13 +551,6 @@ export type Database = {
             foreignKeyName: "services_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
-            referencedRelation: "my_business_profile"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "services_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
             referencedRelation: "public_business_profiles"
             referencedColumns: ["id"]
           },
@@ -628,78 +600,6 @@ export type Database = {
       }
     }
     Views: {
-      my_business_profile: {
-        Row: {
-          address: string | null
-          business_name: string | null
-          city: string | null
-          created_at: string | null
-          description: string | null
-          free_radius_miles: number | null
-          id: string | null
-          is_verified: boolean | null
-          logo_url: string | null
-          origin_lat: number | null
-          origin_lng: number | null
-          per_mile_rate: number | null
-          rating: number | null
-          service_area: string | null
-          state: string | null
-          stripe_account_id: string | null
-          total_reviews: number | null
-          updated_at: string | null
-          user_id: string | null
-          website: string | null
-          zip_code: string | null
-        }
-        Insert: {
-          address?: string | null
-          business_name?: string | null
-          city?: string | null
-          created_at?: string | null
-          description?: string | null
-          free_radius_miles?: number | null
-          id?: string | null
-          is_verified?: boolean | null
-          logo_url?: string | null
-          origin_lat?: number | null
-          origin_lng?: number | null
-          per_mile_rate?: number | null
-          rating?: number | null
-          service_area?: string | null
-          state?: string | null
-          stripe_account_id?: string | null
-          total_reviews?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-          website?: string | null
-          zip_code?: string | null
-        }
-        Update: {
-          address?: string | null
-          business_name?: string | null
-          city?: string | null
-          created_at?: string | null
-          description?: string | null
-          free_radius_miles?: number | null
-          id?: string | null
-          is_verified?: boolean | null
-          logo_url?: string | null
-          origin_lat?: number | null
-          origin_lng?: number | null
-          per_mile_rate?: number | null
-          rating?: number | null
-          service_area?: string | null
-          state?: string | null
-          stripe_account_id?: string | null
-          total_reviews?: number | null
-          updated_at?: string | null
-          user_id?: string | null
-          website?: string | null
-          zip_code?: string | null
-        }
-        Relationships: []
-      }
       public_business_profiles: {
         Row: {
           address: string | null
