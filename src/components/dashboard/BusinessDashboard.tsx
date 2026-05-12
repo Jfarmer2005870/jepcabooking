@@ -781,6 +781,21 @@ const BusinessDashboard = () => {
           setInvoiceBooking(null);
         }}
       />
+
+      {refundBooking && (
+        <RefundDialog
+          open={!!refundBooking}
+          onOpenChange={(open) => !open && setRefundBooking(null)}
+          bookingId={refundBooking.id}
+          totalPrice={refundBooking.total_price || 0}
+          alreadyRefunded={refundBooking.refunded_amount || 0}
+          disputeReason={refundBooking.dispute_reason}
+          onRefunded={() => {
+            fetchBusinessData();
+            setRefundBooking(null);
+          }}
+        />
+      )}
     </div>
   );
 };
