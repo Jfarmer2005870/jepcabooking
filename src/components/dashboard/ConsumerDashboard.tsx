@@ -81,6 +81,7 @@ const ConsumerDashboard = () => {
   const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null);
   const [cancelBooking, setCancelBooking] = useState<Booking | null>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [chatTarget, setChatTarget] = useState<{ businessId: string; businessName: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
