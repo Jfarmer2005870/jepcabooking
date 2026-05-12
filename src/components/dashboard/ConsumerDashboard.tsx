@@ -83,6 +83,7 @@ const ConsumerDashboard = () => {
   const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
   const [invoiceBooking, setInvoiceBooking] = useState<Booking | null>(null);
   const [rescheduleBooking, setRescheduleBooking] = useState<Booking | null>(null);
+  const [reportBooking, setReportBooking] = useState<Booking | null>(null);
   const [cancelBooking, setCancelBooking] = useState<Booking | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [chatTarget, setChatTarget] = useState<{ businessId: string; businessName: string } | null>(null);
