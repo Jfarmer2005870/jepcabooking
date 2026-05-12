@@ -443,8 +443,25 @@ const ConsumerDashboard = () => {
                           Review
                         </Button>
                       )}
+                      {booking.status === "completed" && !booking.dispute_status && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setReportBooking(booking)}
+                        >
+                          Report issue
+                        </Button>
+                      )}
                     </div>
                   </div>
+                  {booking.dispute_status === "open" && (
+                    <p className="mt-2 text-xs text-amber-700">Issue reported — awaiting provider response.</p>
+                  )}
+                  {booking.dispute_status === "refunded" && (booking.refunded_amount || 0) > 0 && (
+                    <p className="mt-2 text-xs text-emerald-700">
+                      Refunded ${Number(booking.refunded_amount).toFixed(2)}
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             ))}
