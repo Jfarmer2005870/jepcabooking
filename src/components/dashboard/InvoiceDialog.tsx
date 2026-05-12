@@ -123,22 +123,52 @@ const InvoiceDialog = ({
   const [hasDrawn, setHasDrawn] = useState(false);
   const [saving, setSaving] = useState(false);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const role: "business" | "consumer" = viewerRole || (canSign ? "business" : "consumer");
 
+  // Convert stored entry (path or legacy public URL) into a storage path
+  const toPath = (entry: string) => {
+    const marker = "/invoice-photos/";
+    const idx = entry.indexOf(marker);
+    return idx > -1 ? entry.slice(idx + marker.length) : entry;
+  };
+
   useEffect(() => {
     if (!open) {
       setHasDrawn(false);
       setSignerName("");
       setSigDataUrl(null);
+      setSignedUrls({});
     }
     if (booking) {
       setPhotos(booking.invoice_photos || []);
     }
   }, [open, booking]);
+
+  // Generate signed URLs whenever photo list changes
+  useEffect(() => {
+    if (!open || photos.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const paths = photos.map(toPath);
+      const { data, error } = await supabase.storage
+        .from("invoice-photos")
+        .createSignedUrls(paths, 60 * 60);
+      if (cancelled || error || !data) return;
+      const map: Record<string, string> = {};
+      data.forEach((d, i) => {
+        if (d.signedUrl) map[photos[i]] = d.signedUrl;
+      });
+      setSignedUrls(map);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [photos, open]);
 
   if (!booking) return null;
 
@@ -165,8 +195,7 @@ const InvoiceDialog = ({
           .from("invoice-photos")
           .upload(path, file, { upsert: false, contentType: file.type });
         if (upErr) throw upErr;
-        const { data } = supabase.storage.from("invoice-photos").getPublicUrl(path);
-        uploaded.push(data.publicUrl);
+        uploaded.push(path);
       }
       const next = [...photos, ...uploaded];
       const { error } = await supabase
@@ -195,12 +224,7 @@ const InvoiceDialog = ({
       if (error) throw error;
       // Best-effort delete from storage
       try {
-        const marker = "/invoice-photos/";
-        const idx = url.indexOf(marker);
-        if (idx > -1) {
-          const path = url.slice(idx + marker.length);
-          await supabase.storage.from("invoice-photos").remove([path]);
-        }
+        await supabase.storage.from("invoice-photos").remove([toPath(url)]);
       } catch {}
       setPhotos(next);
       onUpdated?.();
@@ -404,11 +428,11 @@ const InvoiceDialog = ({
                   <div key={url} className="relative group aspect-square">
                     <button
                       type="button"
-                      onClick={() => setLightbox(url)}
+                      onClick={() => setLightbox(signedUrls[url] || url)}
                       className="block w-full h-full"
                     >
                       <img
-                        src={url}
+                        src={signedUrls[url] || ""}
                         alt="Invoice attachment"
                         className="w-full h-full object-cover rounded-md border"
                       />
