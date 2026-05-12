@@ -126,6 +126,30 @@ const ConsumerDashboard = () => {
     navigate(q ? `/services?q=${encodeURIComponent(q)}` : "/services");
   };
 
+  const handleAddToCalendar = (booking: Booking) => {
+    if (!booking.scheduled_date) {
+      toast({
+        title: "No date scheduled",
+        description: "This booking doesn't have a scheduled date yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+    downloadBookingICS({
+      id: booking.id,
+      title: `${booking.services.title} — ${booking.business_profiles.business_name}`,
+      description: booking.notes || `Booking with ${booking.business_profiles.business_name} via Jepca.`,
+      location: booking.service_address || undefined,
+      date: booking.scheduled_date,
+      time: booking.scheduled_time,
+      durationMinutes: 60,
+    });
+    toast({
+      title: "Calendar event ready",
+      description: "Open the downloaded file to add it to your calendar.",
+    });
+  };
+
   return (
     <div className="space-y-8">
       {/* Welcome + Search */}
