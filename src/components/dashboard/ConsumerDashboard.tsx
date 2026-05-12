@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Search, MapPin, Star, ArrowRight, FileText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Calendar, Clock, Search, MapPin, Star, FileText, MessageSquare } from "lucide-react";
 import LeaveReviewDialog from "./LeaveReviewDialog";
 import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
+import BookingStatusTracker from "./BookingStatusTracker";
+import QuickCategories from "./QuickCategories";
 
 interface Booking {
   id: string;
