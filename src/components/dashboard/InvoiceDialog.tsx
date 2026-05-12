@@ -234,6 +234,137 @@ const InvoiceDialog = ({
     }
   };
 
+  const [downloading, setDownloading] = useState(false);
+
+  const fetchAsDataUrl = async (url: string): Promise<string | null> => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      return await new Promise((resolve) => {
+        const r = new FileReader();
+        r.onloadend = () => resolve(typeof r.result === "string" ? r.result : null);
+        r.onerror = () => resolve(null);
+        r.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  };
+
+  const downloadPdf = async () => {
+    setDownloading(true);
+    try {
+      const doc = new jsPDF({ unit: "pt", format: "letter" });
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+      const margin = 48;
+      let y = margin;
+      const ensureSpace = (h: number) => {
+        if (y + h > pageH - margin) { doc.addPage(); y = margin; }
+      };
+
+      doc.setFont("helvetica", "bold"); doc.setFontSize(22);
+      doc.text("INVOICE", margin, y);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+      doc.text(`#${booking.id.slice(0, 8).toUpperCase()}`, pageW - margin, y, { align: "right" });
+      y += 16;
+      doc.setTextColor(120);
+      doc.text(new Date(booking.created_at).toLocaleDateString(), pageW - margin, y, { align: "right" });
+      doc.setTextColor(0);
+      y += 24;
+
+      doc.setFont("helvetica", "bold");
+      doc.text("From", margin, y); doc.text("To", pageW / 2, y);
+      doc.setFont("helvetica", "normal"); y += 14;
+      doc.text(booking.business_profiles?.business_name || "Service Provider", margin, y);
+      doc.text(booking.profiles?.full_name || booking.profiles?.email || "Customer", pageW / 2, y);
+      y += 24;
+
+      doc.setFont("helvetica", "bold");
+      doc.text(booking.services?.title || "Service", margin, y);
+      doc.setFont("helvetica", "normal"); y += 14;
+      if (booking.scheduled_date) {
+        doc.text(`${new Date(booking.scheduled_date).toLocaleDateString()}${booking.scheduled_time ? " · " + booking.scheduled_time : ""}`, margin, y);
+        y += 13;
+      }
+      if (booking.service_address) {
+        const lines = doc.splitTextToSize(booking.service_address, pageW - margin * 2);
+        doc.text(lines, margin, y); y += 13 * lines.length;
+      }
+      y += 10;
+
+      doc.setDrawColor(220); doc.line(margin, y, pageW - margin, y); y += 16;
+      const rightX = pageW - margin;
+      const row = (label: string, amount: string, bold = false) => {
+        ensureSpace(18);
+        doc.setFont("helvetica", bold ? "bold" : "normal");
+        doc.text(label, margin, y);
+        doc.text(amount, rightX, y, { align: "right" });
+        y += 16;
+      };
+      row("Service", `$${subtotal.toFixed(2)}`);
+      row(`Travel${distance != null ? ` (${Number(distance).toFixed(1)} mi)` : ""}`, `$${travelFee.toFixed(2)}`);
+      row("Platform fee (5%)", `$${platformFee.toFixed(2)}`);
+      doc.line(margin, y - 4, pageW - margin, y - 4); y += 6;
+      row("Total", `$${total.toFixed(2)}`, true);
+      y += 14;
+
+      if (photos.length > 0) {
+        ensureSpace(20);
+        doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+        doc.text("Invoice photos", margin, y); y += 14;
+        doc.setFontSize(10); doc.setFont("helvetica", "normal");
+        const cellW = (pageW - margin * 2 - 16) / 3;
+        const cellH = cellW;
+        let col = 0;
+        for (const p of photos) {
+          const url = signedUrls[p] || p;
+          const dataUrl = await fetchAsDataUrl(url);
+          if (!dataUrl) continue;
+          if (col === 0) ensureSpace(cellH + 8);
+          const x = margin + col * (cellW + 8);
+          const fmt = dataUrl.includes("image/png") ? "PNG" : "JPEG";
+          try { doc.addImage(dataUrl, fmt, x, y, cellW, cellH, undefined, "FAST"); } catch {}
+          col++;
+          if (col === 3) { col = 0; y += cellH + 8; }
+        }
+        if (col !== 0) y += cellH + 8;
+        y += 8;
+      }
+
+      ensureSpace(140);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+      doc.text("Signatures", margin, y); y += 16;
+      doc.setFontSize(10); doc.setFont("helvetica", "normal");
+      const sigW = (pageW - margin * 2 - 24) / 2;
+      const sigH = 70;
+      const drawSig = (label: string, sig: string | null | undefined, name: string | null | undefined, at: string | null | undefined, x: number) => {
+        doc.setFont("helvetica", "bold"); doc.text(label, x, y);
+        doc.setFont("helvetica", "normal");
+        doc.setDrawColor(220); doc.rect(x, y + 6, sigW, sigH);
+        if (sig) {
+          try { doc.addImage(sig, "PNG", x + 4, y + 10, sigW - 8, sigH - 8); } catch {}
+          doc.setFontSize(8); doc.setTextColor(120);
+          doc.text(`${name || ""}${at ? "  ·  " + new Date(at).toLocaleString() : ""}`, x, y + sigH + 22);
+          doc.setTextColor(0); doc.setFontSize(10);
+        } else {
+          doc.setFontSize(8); doc.setTextColor(150);
+          doc.text("Not signed", x + 4, y + sigH + 22);
+          doc.setTextColor(0); doc.setFontSize(10);
+        }
+      };
+      drawSig("Provider", booking.business_signature, booking.business_signature_name, booking.business_signature_at, margin);
+      drawSig("Customer", booking.consumer_signature, booking.consumer_signature_name, booking.consumer_signature_at, margin + sigW + 24);
+
+      doc.save(`invoice-${booking.id.slice(0, 8).toUpperCase()}.pdf`);
+      toast({ title: "Invoice downloaded" });
+    } catch (e: any) {
+      toast({ title: "Download failed", description: e.message || "Try again.", variant: "destructive" });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const saveSignature = async () => {
     if (!hasDrawn || !sigDataUrl) {
       toast({ title: "Please sign", description: "Draw your signature in the box.", variant: "destructive" });
