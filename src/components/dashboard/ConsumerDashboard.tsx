@@ -12,6 +12,7 @@ import InvoiceDialog, { InvoiceBooking } from "./InvoiceDialog";
 import BookingStatusTracker from "./BookingStatusTracker";
 import QuickCategories from "./QuickCategories";
 import RescheduleBookingDialog from "./RescheduleBookingDialog";
+import ChatDialog from "@/components/chat/ChatDialog";
 import {
   AlertDialog,
   AlertDialogAction,
