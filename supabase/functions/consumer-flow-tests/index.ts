@@ -260,17 +260,33 @@ Deno.serve(async (req) => {
       }
     });
 
+    // Capture webhook events related to this booking before teardown wipes them.
+    let webhookEvents: unknown[] = [];
+    if (bookingId) {
+      const { data } = await admin
+        .from("stripe_webhook_events")
+        .select("event_id, event_type, processing_status, signature_verified, payment_intent_id, error_message, received_at, processed_at")
+        .eq("related_booking_id", bookingId)
+        .order("received_at", { ascending: true });
+      webhookEvents = data ?? [];
+    }
+
     return json({
       ok: true,
       summary: `${steps.filter(s => s.ok).length}/${steps.length} steps passed`,
       bookingId, consumerEmail, businessEmail,
       steps,
+      logs,
+      webhook_events: webhookEvents,
+      ranAt: new Date().toISOString(),
     });
   } catch (e) {
     return json({
       ok: false,
       error: e instanceof Error ? e.message : (typeof e === "object" ? JSON.stringify(e) : String(e)),
       steps,
+      logs,
+      ranAt: new Date().toISOString(),
     }, 500);
   } finally {
     // ─── TEARDOWN (best-effort) ────────────────────────────────────────────
