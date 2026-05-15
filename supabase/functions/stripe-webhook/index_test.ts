@@ -254,6 +254,7 @@ Deno.test("e2e: payment_intent.payment_failed marks booking as failed", async ()
 });
 
 Deno.test("idempotency: re-delivering the same event_id does not duplicate row", async () => {
+  if (skipIfNoDb("idempotency")) return;
   const { bookingId, pi } = await makeTestBooking();
   const eventId = `evt_idem_${TAG}_${crypto.randomUUID().slice(0, 8)}`;
   const payload = JSON.stringify({
