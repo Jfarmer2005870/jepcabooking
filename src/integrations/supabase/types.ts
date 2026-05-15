@@ -754,6 +754,49 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_my_business_profile: {
+        Args: never
+        Returns: {
+          address: string | null
+          business_name: string
+          cancellation_fee_pct: number
+          cancellation_window_hours: number
+          city: string | null
+          created_at: string
+          description: string | null
+          free_radius_miles: number
+          id: string
+          is_verified: boolean | null
+          logo_url: string | null
+          origin_lat: number | null
+          origin_lng: number | null
+          per_mile_rate: number
+          rating: number | null
+          service_area: string | null
+          state: string | null
+          stripe_account_id: string | null
+          total_reviews: number | null
+          updated_at: string
+          user_id: string
+          website: string | null
+          zip_code: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "business_profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      get_travel_estimate: {
+        Args: { _business_id: string; _dest_lat: number; _dest_lng: number }
+        Returns: {
+          distance_miles: number
+          free_radius_miles: number
+          per_mile_rate: number
+          travel_fee: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
