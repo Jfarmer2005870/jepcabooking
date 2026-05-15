@@ -176,6 +176,7 @@ Deno.test("verify-stripe-webhook reports webhook secret configured and valid", a
 });
 
 Deno.test("e2e: payment_intent.succeeded flips booking to paid and writes audit row", async () => {
+  if (skipIfNoDb("e2e succeeded")) return;
   const { bookingId, pi } = await makeTestBooking();
   const eventId = `evt_e2e_${TAG}_${crypto.randomUUID().slice(0, 8)}`;
   const body = JSON.stringify({
