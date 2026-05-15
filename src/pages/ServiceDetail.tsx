@@ -107,6 +107,7 @@ const ServiceDetail = () => {
   const [notes, setNotes] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [availability, setAvailability] = useState<{ weekday: number; start_time: string; end_time: string }[]>([]);
+  const [travelEstimate, setTravelEstimate] = useState<{ distance_miles: number | null; free_radius_miles: number | null; per_mile_rate: number | null; travel_fee: number | null } | null>(null);
 
   useEffect(() => {
     if (time && !availableSlots.find((s) => s.value === time)) setTime("");
