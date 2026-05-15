@@ -118,7 +118,11 @@ async function consumerClient(ctx: Ctx) {
   return client;
 }
 
-Deno.test("consumer can update allowlisted booking fields (notes, signature, schedule)", async () => {
+Deno.test({
+  name: "consumer can update allowlisted booking fields (notes, signature, schedule)",
+  ignore: SKIP,
+  fn: async () => {
+    if (SKIP) { console.log(SKIP_REASON); return; }
   const ctx = await setupFixtures();
   try {
     const client = await consumerClient(ctx);
