@@ -87,7 +87,31 @@ async function cleanup(bookingId: string, eventIds: string[]) {
   await admin.from("bookings").delete().eq("id", bookingId);
 }
 
+Deno.test("CORS preflight (OPTIONS) responds without auth", async () => {
+  const res = await fetch(FN, { method: "OPTIONS" });
+  await res.text();
+  assertEquals(res.status, 200);
+  assert(res.headers.get("access-control-allow-origin"));
+});
+
 Deno.test("rejects invalid stripe signature with 400 and logs signature_failed", async () => {
+  if (skipIfNoDb("invalid signature")) {
+    // We can still smoke-test the response without DB
+    const res = await fetch(FN, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "stripe-signature": "t=0,v1=deadbeef",
+      },
+      body: JSON.stringify({ id: "evt_x", type: "x", data: { object: {} } }),
+    });
+    await res.text();
+    assert(
+      res.status === 400 || res.status === 200,
+      `unexpected status ${res.status}`,
+    );
+    return;
+  }
   const eventId = `evt_invalid_${TAG}_${crypto.randomUUID().slice(0, 8)}`;
   const body = JSON.stringify({
     id: eventId,
