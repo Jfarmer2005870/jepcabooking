@@ -224,6 +224,7 @@ Deno.test("e2e: payment_intent.succeeded flips booking to paid and writes audit 
 });
 
 Deno.test("e2e: payment_intent.payment_failed marks booking as failed", async () => {
+  if (skipIfNoDb("e2e failed")) return;
   const { bookingId, pi } = await makeTestBooking();
   const eventId = `evt_fail_${TAG}_${crypto.randomUUID().slice(0, 8)}`;
   const body = JSON.stringify({
