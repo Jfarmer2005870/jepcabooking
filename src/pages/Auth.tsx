@@ -145,7 +145,7 @@ const Auth = () => {
             description: `We sent a verification link to ${email}. Click it to activate your account, then sign in.`,
           });
           // Reset to login mode so user signs in after verifying
-          setIsLogin(true);
+          setMode("login");
           setPassword("");
         }
       }
