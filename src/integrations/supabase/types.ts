@@ -797,7 +797,7 @@ export type Database = {
         | "hvac"
         | "pest_control"
         | "other"
-      user_role: "consumer" | "business"
+      user_role: "consumer" | "business" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -944,7 +944,7 @@ export const Constants = {
         "pest_control",
         "other",
       ],
-      user_role: ["consumer", "business"],
+      user_role: ["consumer", "business", "admin"],
     },
   },
 } as const
