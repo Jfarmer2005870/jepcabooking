@@ -141,10 +141,12 @@ const Auth = () => {
           }
         } else {
           toast({
-            title: "Account created!",
-            description: "Welcome to Jepca. Your account is ready.",
+            title: "Check your email",
+            description: `We sent a verification link to ${email}. Click it to activate your account, then sign in.`,
           });
-          navigate(redirectPath);
+          // Reset to login mode so user signs in after verifying
+          setMode("login");
+          setPassword("");
         }
       }
     } catch (error) {
