@@ -607,13 +607,9 @@ const ServiceDetail = () => {
                   {/* Price breakdown */}
                   {service.price_min && (() => {
                     const bp: any = service.business_profiles;
-                    const activeCoords = useHomeAddress && homeCoords ? homeCoords : coords;
-                    const hasOrigin = bp?.origin_lat != null && bp?.origin_lng != null;
-                    const rawDistance = hasOrigin && activeCoords
-                      ? haversineMiles({ lat: bp.origin_lat, lng: bp.origin_lng }, activeCoords)
-                      : null;
-                    const freeRadius = Number(bp?.free_radius_miles ?? 10);
-                    const perMile = Number(bp?.per_mile_rate ?? 0);
+                    const rawDistance = travelEstimate?.distance_miles ?? null;
+                    const freeRadius = Number(travelEstimate?.free_radius_miles ?? bp?.free_radius_miles ?? 10);
+                    const perMile = Number(travelEstimate?.per_mile_rate ?? bp?.per_mile_rate ?? 0);
                     const servicePrice = service.price_type === "hourly"
                       ? service.price_min * estimatedHours
                       : service.price_min;
