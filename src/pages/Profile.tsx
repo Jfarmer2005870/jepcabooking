@@ -109,11 +109,9 @@ const Profile = () => {
 
         // Fetch business profile if business user
         if (userRole === "business") {
-          const { data: businessData, error: businessError } = await supabase
-            .from("business_profiles")
-            .select("*")
-            .eq("user_id", user.id)
-            .maybeSingle();
+          const { data: businessRows, error: businessError } = await supabase
+            .rpc("get_my_business_profile");
+          const businessData = businessRows?.[0] ?? null;
 
           if (businessError && businessError.code !== "PGRST116") {
             console.error("Error fetching business profile:", businessError);

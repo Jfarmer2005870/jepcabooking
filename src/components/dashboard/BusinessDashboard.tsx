@@ -214,13 +214,11 @@ const BusinessDashboard = () => {
 
     try {
       // Fetch business profile
-      const { data: profile, error: profileError } = await supabase
-        .from("business_profiles")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const { data: profileRows, error: profileError } = await supabase
+        .rpc("get_my_business_profile");
 
       if (profileError) throw profileError;
+      const profile = profileRows?.[0] ?? null;
       setBusinessProfile(profile);
 
       if (profile) {

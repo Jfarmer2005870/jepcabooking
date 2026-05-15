@@ -107,6 +107,7 @@ const ServiceDetail = () => {
   const [notes, setNotes] = useState("");
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [availability, setAvailability] = useState<{ weekday: number; start_time: string; end_time: string }[]>([]);
+  const [travelEstimate, setTravelEstimate] = useState<{ distance_miles: number | null; free_radius_miles: number | null; per_mile_rate: number | null; travel_fee: number | null } | null>(null);
 
   useEffect(() => {
     if (time && !availableSlots.find((s) => s.value === time)) setTime("");
@@ -142,6 +143,33 @@ const ServiceDetail = () => {
     fetchHomeAddress();
   }, [user]);
 
+  // Fetch travel estimate (server-side; doesn't expose provider coords)
+  useEffect(() => {
+    const fetchEstimate = async () => {
+      const businessId = service?.business_profiles?.id;
+      const active = useHomeAddress && homeCoords ? homeCoords : coords;
+      if (!businessId || !active) {
+        setTravelEstimate(null);
+        return;
+      }
+      const { data, error } = await supabase.rpc("get_travel_estimate", {
+        _business_id: businessId,
+        _dest_lat: active.lat,
+        _dest_lng: active.lng,
+      });
+      if (!error && data && data[0]) {
+        const r = data[0] as any;
+        setTravelEstimate({
+          distance_miles: r.distance_miles != null ? Number(r.distance_miles) : null,
+          free_radius_miles: r.free_radius_miles != null ? Number(r.free_radius_miles) : null,
+          per_mile_rate: r.per_mile_rate != null ? Number(r.per_mile_rate) : null,
+          travel_fee: r.travel_fee != null ? Number(r.travel_fee) : null,
+        });
+      }
+    };
+    fetchEstimate();
+  }, [service?.business_profiles?.id, coords, homeCoords, useHomeAddress]);
+
   const fetchService = async () => {
     try {
       const { data, error } = await supabase
@@ -158,8 +186,6 @@ const ServiceDetail = () => {
             total_reviews,
             is_verified,
             service_area,
-            origin_lat,
-            origin_lng,
             free_radius_miles,
             per_mile_rate
           )
@@ -581,13 +607,9 @@ const ServiceDetail = () => {
                   {/* Price breakdown */}
                   {service.price_min && (() => {
                     const bp: any = service.business_profiles;
-                    const activeCoords = useHomeAddress && homeCoords ? homeCoords : coords;
-                    const hasOrigin = bp?.origin_lat != null && bp?.origin_lng != null;
-                    const rawDistance = hasOrigin && activeCoords
-                      ? haversineMiles({ lat: bp.origin_lat, lng: bp.origin_lng }, activeCoords)
-                      : null;
-                    const freeRadius = Number(bp?.free_radius_miles ?? 10);
-                    const perMile = Number(bp?.per_mile_rate ?? 0);
+                    const rawDistance = travelEstimate?.distance_miles ?? null;
+                    const freeRadius = Number(travelEstimate?.free_radius_miles ?? bp?.free_radius_miles ?? 10);
+                    const perMile = Number(travelEstimate?.per_mile_rate ?? bp?.per_mile_rate ?? 0);
                     const servicePrice = service.price_type === "hourly"
                       ? service.price_min * estimatedHours
                       : service.price_min;
@@ -634,10 +656,7 @@ const ServiceDetail = () => {
                           <span className="text-foreground">Total</span>
                           <span className="text-primary">${b.total.toFixed(2)}</span>
                         </div>
-                        {!hasOrigin && perMile > 0 && (
-                          <p className="text-xs text-muted-foreground pt-1">Provider hasn't set a dispatch origin yet.</p>
-                        )}
-                        {hasOrigin && !activeCoords && (
+                        {rawDistance == null && perMile > 0 && (
                           <p className="text-xs text-muted-foreground pt-1">Drop a pin on the map to see travel fee.</p>
                         )}
                       </div>
