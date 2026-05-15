@@ -107,7 +107,7 @@ async function cleanup(ctx: Ctx) {
 }
 
 async function consumerClient(ctx: Ctx) {
-  const client = createClient(SUPABASE_URL, ANON_KEY, {
+  const client = createClient(SUPABASE_URL!, ANON_KEY!, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   const { error } = await client.auth.signInWithPassword({
