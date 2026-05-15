@@ -155,7 +155,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "consumer is blocked from changing status, prices, payment, or refund",
+  name: "consumer blocked-field updates are scrubbed and audit-logged",
   ignore: SKIP,
   fn: async () => {
     if (SKIP) { console.log(SKIP_REASON); return; }
@@ -172,18 +172,20 @@ Deno.test({
       ];
 
       for (const [label, payload] of blockedAttempts) {
-        const { error } = await client.from("bookings").update(payload).eq("id", ctx.bookingId);
-        assert(error, `expected error when consumer updates ${label}`);
-        assert(
-          error!.message.toLowerCase().includes("consumers can only update") ||
-            (error as { code?: string }).code === "42501",
-          `expected 42501 trigger error for ${label}, got: ${error!.message}`,
-        );
+        // Combine a blocked field with an allowed field to ensure allowed
+        // changes still apply while blocked changes are silently scrubbed.
+        const note = `attempt-${label}-${Date.now()}`;
+        const { error } = await client
+          .from("bookings")
+          .update({ ...payload, notes: note })
+          .eq("id", ctx.bookingId);
+        assertEquals(error, null, `update should not error for ${label}: ${error?.message}`);
       }
 
+      // Sensitive fields must remain untouched
       const { data: fresh } = await admin
         .from("bookings")
-        .select("status,total_price,platform_fee,payment_status,refunded_amount")
+        .select("status,total_price,platform_fee,payment_status,refunded_amount,notes")
         .eq("id", ctx.bookingId)
         .single();
       assertEquals(fresh?.status, "pending");
@@ -191,7 +193,25 @@ Deno.test({
       assertEquals(Number(fresh?.platform_fee), 5);
       assertEquals(fresh?.payment_status, "unpaid");
       assertEquals(Number(fresh?.refunded_amount), 0);
+      assert((fresh?.notes ?? "").startsWith("attempt-"), "allowed notes update should have applied");
+
+      // Audit log should contain one row per blocked attempt with the right field
+      const { data: audit, error: auditErr } = await admin
+        .from("booking_update_audit")
+        .select("rejected_fields,attempted_values")
+        .eq("booking_id", ctx.bookingId)
+        .order("created_at", { ascending: true });
+      assertEquals(auditErr, null, `audit query should succeed: ${auditErr?.message}`);
+      assertEquals(audit?.length, blockedAttempts.length, "one audit row per blocked attempt");
+      for (let i = 0; i < blockedAttempts.length; i++) {
+        const [label] = blockedAttempts[i];
+        const row = audit![i] as { rejected_fields: string[]; attempted_values: Record<string, unknown> };
+        assert(row.rejected_fields.includes(label), `audit row ${i} should record field ${label}`);
+        assert(label in row.attempted_values, `audit row ${i} should capture attempted value for ${label}`);
+      }
     } finally {
+      // Audit rows reference booking_id but have no FK; clean them up explicitly
+      await admin.from("booking_update_audit").delete().eq("booking_id", ctx.bookingId);
       await cleanup(ctx);
     }
   },

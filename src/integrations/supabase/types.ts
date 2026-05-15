@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      booking_update_audit: {
+        Row: {
+          attempted_values: Json
+          booking_id: string
+          consumer_id: string
+          created_at: string
+          id: string
+          rejected_fields: string[]
+        }
+        Insert: {
+          attempted_values: Json
+          booking_id: string
+          consumer_id: string
+          created_at?: string
+          id?: string
+          rejected_fields: string[]
+        }
+        Update: {
+          attempted_values?: Json
+          booking_id?: string
+          consumer_id?: string
+          created_at?: string
+          id?: string
+          rejected_fields?: string[]
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           auto_cancel_at: string | null
