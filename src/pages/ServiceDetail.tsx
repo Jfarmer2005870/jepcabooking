@@ -656,10 +656,7 @@ const ServiceDetail = () => {
                           <span className="text-foreground">Total</span>
                           <span className="text-primary">${b.total.toFixed(2)}</span>
                         </div>
-                        {!hasOrigin && perMile > 0 && (
-                          <p className="text-xs text-muted-foreground pt-1">Provider hasn't set a dispatch origin yet.</p>
-                        )}
-                        {hasOrigin && !activeCoords && (
+                        {rawDistance == null && perMile > 0 && (
                           <p className="text-xs text-muted-foreground pt-1">Drop a pin on the map to see travel fee.</p>
                         )}
                       </div>
