@@ -668,8 +668,6 @@ export type Database = {
           id: string | null
           is_verified: boolean | null
           logo_url: string | null
-          origin_lat: number | null
-          origin_lng: number | null
           per_mile_rate: number | null
           rating: number | null
           service_area: string | null
@@ -690,8 +688,6 @@ export type Database = {
           id?: string | null
           is_verified?: boolean | null
           logo_url?: string | null
-          origin_lat?: number | null
-          origin_lng?: number | null
           per_mile_rate?: number | null
           rating?: number | null
           service_area?: string | null
@@ -712,8 +708,6 @@ export type Database = {
           id?: string | null
           is_verified?: boolean | null
           logo_url?: string | null
-          origin_lat?: number | null
-          origin_lng?: number | null
           per_mile_rate?: number | null
           rating?: number | null
           service_area?: string | null
