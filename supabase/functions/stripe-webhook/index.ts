@@ -28,9 +28,11 @@ serve(async (req) => {
   const body = await req.text();
 
   let event: Stripe.Event;
+  let signatureVerified = false;
   try {
     if (webhookSecret && signature) {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+      signatureVerified = true;
     } else {
       // Fallback for testing without signature verification configured
       event = JSON.parse(body) as Stripe.Event;
@@ -38,11 +40,55 @@ serve(async (req) => {
     }
   } catch (err) {
     console.error("Webhook signature verification failed:", err);
+    // Best-effort: log the rejected attempt
+    try {
+      const parsed = JSON.parse(body);
+      await admin.from("stripe_webhook_events").upsert({
+        event_id: parsed?.id ?? `invalid-${crypto.randomUUID()}`,
+        event_type: parsed?.type ?? "unknown",
+        signature_verified: false,
+        processing_status: "signature_failed",
+        error_message: err instanceof Error ? err.message : String(err),
+        payload: parsed ?? {},
+      }, { onConflict: "event_id" });
+    } catch (_) { /* ignore */ }
     return new Response(JSON.stringify({ error: "Invalid signature" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  // Extract a payment_intent_id hint for later joining
+  const extractPI = (e: Stripe.Event): string | null => {
+    const obj: any = e.data.object;
+    if (obj?.object === "payment_intent") return obj.id;
+    if (typeof obj?.payment_intent === "string") return obj.payment_intent;
+    if (obj?.payment_intent?.id) return obj.payment_intent.id;
+    return null;
+  };
+
+  // Idempotent insert: if Stripe redelivers, we keep the original row
+  const piHint = extractPI(event);
+  const { error: insertErr } = await admin.from("stripe_webhook_events").upsert({
+    event_id: event.id,
+    event_type: event.type,
+    signature_verified: signatureVerified,
+    payment_intent_id: piHint,
+    processing_status: "received",
+    payload: event as unknown as Record<string, unknown>,
+  }, { onConflict: "event_id", ignoreDuplicates: true });
+  if (insertErr) console.error("Failed to log webhook event:", insertErr.message);
+
+  const finalize = async (status: string, bookingId: string | null, errorMessage: string | null = null) => {
+    await admin.from("stripe_webhook_events")
+      .update({
+        processing_status: status,
+        related_booking_id: bookingId,
+        error_message: errorMessage,
+        processed_at: new Date().toISOString(),
+      })
+      .eq("event_id", event.id);
+  };
 
   try {
     console.log("Stripe webhook event:", event.type);
@@ -56,15 +102,22 @@ serve(async (req) => {
       return data;
     };
 
+    let resolvedBookingId: string | null = null;
+    let resolvedStatus = "ignored";
+
     switch (event.type) {
       case "payment_intent.succeeded": {
         const pi = event.data.object as Stripe.PaymentIntent;
         const booking = await findBookingByPI(pi.id);
         if (booking) {
+          resolvedBookingId = booking.id;
           await admin
             .from("bookings")
             .update({ payment_status: "paid" })
             .eq("id", booking.id);
+          resolvedStatus = "booking_updated";
+        } else {
+          resolvedStatus = "no_matching_booking";
         }
         break;
       }
@@ -74,6 +127,7 @@ serve(async (req) => {
         const pi = event.data.object as Stripe.PaymentIntent;
         const booking = await findBookingByPI(pi.id);
         if (booking) {
+          resolvedBookingId = booking.id;
           await admin
             .from("bookings")
             .update({ payment_status: event.type === "payment_intent.canceled" ? "canceled" : "failed" })
@@ -85,6 +139,9 @@ serve(async (req) => {
             message: `There was a problem with the payment for "${(booking as any).services?.title || "your booking"}".`,
             related_id: booking.id,
           });
+          resolvedStatus = "booking_updated";
+        } else {
+          resolvedStatus = "no_matching_booking";
         }
         break;
       }
@@ -92,9 +149,10 @@ serve(async (req) => {
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
         const piId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
-        if (!piId) break;
+        if (!piId) { resolvedStatus = "no_payment_intent"; break; }
         const booking = await findBookingByPI(piId);
         if (booking) {
+          resolvedBookingId = booking.id;
           const refundedAmount = (charge.amount_refunded || 0) / 100;
           await admin
             .from("bookings")
@@ -131,6 +189,9 @@ serve(async (req) => {
               console.error("Failed to enqueue refund email:", e);
             }
           }
+          resolvedStatus = "booking_updated";
+        } else {
+          resolvedStatus = "no_matching_booking";
         }
         break;
       }
@@ -140,9 +201,10 @@ serve(async (req) => {
       case "charge.dispute.closed": {
         const dispute = event.data.object as Stripe.Dispute;
         const piId = typeof dispute.payment_intent === "string" ? dispute.payment_intent : dispute.payment_intent?.id;
-        if (!piId) break;
+        if (!piId) { resolvedStatus = "no_payment_intent"; break; }
         const booking = await findBookingByPI(piId);
         if (booking) {
+          resolvedBookingId = booking.id;
           await admin
             .from("bookings")
             .update({ dispute_status: dispute.status })
@@ -163,21 +225,28 @@ serve(async (req) => {
               related_id: booking.id,
             });
           }
+          resolvedStatus = "booking_updated";
+        } else {
+          resolvedStatus = "no_matching_booking";
         }
         break;
       }
 
       default:
         console.log("Unhandled event type:", event.type);
+        resolvedStatus = "unhandled_type";
     }
 
-    return new Response(JSON.stringify({ received: true }), {
+    await finalize(resolvedStatus, resolvedBookingId);
+
+    return new Response(JSON.stringify({ received: true, status: resolvedStatus, booking_id: resolvedBookingId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("Webhook handler error:", message);
+    await finalize("handler_error", null, message);
     return new Response(JSON.stringify({ error: message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
