@@ -25,6 +25,7 @@ const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Features = lazy(() => import("./pages/Features"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const AdminMonitoring = lazy(() => import("./pages/AdminMonitoring"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
