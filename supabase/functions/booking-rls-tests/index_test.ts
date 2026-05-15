@@ -148,46 +148,51 @@ Deno.test({
       .update({ scheduled_date: "2030-01-01", scheduled_time: "10:00:00" })
       .eq("id", ctx.bookingId);
     assertEquals(schedErr, null, `schedule update should succeed: ${schedErr?.message}`);
-  } finally {
-    await cleanup(ctx);
-  }
+    } finally {
+      await cleanup(ctx);
+    }
+  },
 });
 
-Deno.test("consumer is blocked from changing status, prices, payment, or refund", async () => {
-  const ctx = await setupFixtures();
-  try {
-    const client = await consumerClient(ctx);
+Deno.test({
+  name: "consumer is blocked from changing status, prices, payment, or refund",
+  ignore: SKIP,
+  fn: async () => {
+    if (SKIP) { console.log(SKIP_REASON); return; }
+    const ctx = await setupFixtures();
+    try {
+      const client = await consumerClient(ctx);
 
-    const blockedAttempts: Array<[string, Record<string, unknown>]> = [
-      ["status", { status: "completed" }],
-      ["total_price", { total_price: 1 }],
-      ["platform_fee", { platform_fee: 0 }],
-      ["payment_status", { payment_status: "paid" }],
-      ["refunded_amount", { refunded_amount: 9999 }],
-    ];
+      const blockedAttempts: Array<[string, Record<string, unknown>]> = [
+        ["status", { status: "completed" }],
+        ["total_price", { total_price: 1 }],
+        ["platform_fee", { platform_fee: 0 }],
+        ["payment_status", { payment_status: "paid" }],
+        ["refunded_amount", { refunded_amount: 9999 }],
+      ];
 
-    for (const [label, payload] of blockedAttempts) {
-      const { error } = await client.from("bookings").update(payload).eq("id", ctx.bookingId);
-      assert(error, `expected error when consumer updates ${label}`);
-      assert(
-        error!.message.toLowerCase().includes("consumers can only update") ||
-          (error as { code?: string }).code === "42501",
-        `expected 42501 trigger error for ${label}, got: ${error!.message}`,
-      );
+      for (const [label, payload] of blockedAttempts) {
+        const { error } = await client.from("bookings").update(payload).eq("id", ctx.bookingId);
+        assert(error, `expected error when consumer updates ${label}`);
+        assert(
+          error!.message.toLowerCase().includes("consumers can only update") ||
+            (error as { code?: string }).code === "42501",
+          `expected 42501 trigger error for ${label}, got: ${error!.message}`,
+        );
+      }
+
+      const { data: fresh } = await admin
+        .from("bookings")
+        .select("status,total_price,platform_fee,payment_status,refunded_amount")
+        .eq("id", ctx.bookingId)
+        .single();
+      assertEquals(fresh?.status, "pending");
+      assertEquals(Number(fresh?.total_price), 105);
+      assertEquals(Number(fresh?.platform_fee), 5);
+      assertEquals(fresh?.payment_status, "unpaid");
+      assertEquals(Number(fresh?.refunded_amount), 0);
+    } finally {
+      await cleanup(ctx);
     }
-
-    // Confirm DB state was not mutated
-    const { data: fresh } = await admin
-      .from("bookings")
-      .select("status,total_price,platform_fee,payment_status,refunded_amount")
-      .eq("id", ctx.bookingId)
-      .single();
-    assertEquals(fresh?.status, "pending");
-    assertEquals(Number(fresh?.total_price), 105);
-    assertEquals(Number(fresh?.platform_fee), 5);
-    assertEquals(fresh?.payment_status, "unpaid");
-    assertEquals(Number(fresh?.refunded_amount), 0);
-  } finally {
-    await cleanup(ctx);
-  }
+  },
 });
