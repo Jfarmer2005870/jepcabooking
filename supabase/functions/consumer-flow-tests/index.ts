@@ -178,9 +178,9 @@ Deno.serve(async (req) => {
     });
 
     // Business accepts so they own the lifecycle
-    await step("accept: business accepts booking", steps, async () => {
+    await step("confirm: business confirms booking", steps, async () => {
       const { error } = await business.from("bookings")
-        .update({ status: "accepted" }).eq("id", bookingId!);
+        .update({ status: "confirmed" }).eq("id", bookingId!);
       if (error) throw error;
     });
 
