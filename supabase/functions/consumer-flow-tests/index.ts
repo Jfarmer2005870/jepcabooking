@@ -149,9 +149,13 @@ Deno.serve(async (req) => {
     // ─── 2. PAY (synthetic webhook event) ──────────────────────────────────
     await step("pay: webhook marks booking paid", steps, async () => {
       const pi = `pi_test_${crypto.randomUUID().slice(0, 8)}`;
-      const { error: piErr } = await admin.from("bookings")
-        .update({ payment_intent_id: pi }).eq("id", bookingId!);
+      const { data: upd, error: piErr } = await admin.from("bookings")
+        .update({ payment_intent_id: pi }).eq("id", bookingId!)
+        .select("id, payment_intent_id").single();
       if (piErr) throw piErr;
+      if (upd?.payment_intent_id !== pi) {
+        throw new Error(`pi not persisted on booking ${bookingId} (got ${upd?.payment_intent_id})`);
+      }
 
       const res = await fetch(`${SUPABASE_URL}/functions/v1/stripe-webhook`, {
         method: "POST",
@@ -164,6 +168,9 @@ Deno.serve(async (req) => {
       });
       const body = await res.json().catch(() => ({}));
       if (res.status !== 200) throw new Error(`webhook status ${res.status}: ${JSON.stringify(body)}`);
+      if (body.status !== "booking_updated") {
+        throw new Error(`webhook status=${body.status} pi=${pi} booking=${bookingId} body=${JSON.stringify(body)}`);
+      }
 
       const { data: row } = await admin.from("bookings")
         .select("payment_status").eq("id", bookingId!).single();
