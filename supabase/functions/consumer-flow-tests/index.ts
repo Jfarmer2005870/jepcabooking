@@ -16,6 +16,7 @@ const corsHeaders = {
 };
 
 type Step = { name: string; ok: boolean; detail?: string; ms: number };
+type LogEntry = { level: "log" | "warn" | "error"; ts: string; msg: string };
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -27,20 +28,22 @@ function json(body: unknown, status = 200) {
 async function step<T>(
   name: string,
   steps: Step[],
+  logs: LogEntry[],
   fn: () => Promise<T>,
 ): Promise<T> {
   const t0 = performance.now();
+  logs.push({ level: "log", ts: new Date().toISOString(), msg: `▶ ${name}` });
   try {
     const out = await fn();
-    steps.push({ name, ok: true, ms: Math.round(performance.now() - t0) });
+    const ms = Math.round(performance.now() - t0);
+    steps.push({ name, ok: true, ms });
+    logs.push({ level: "log", ts: new Date().toISOString(), msg: `✓ ${name} (${ms}ms)` });
     return out;
   } catch (e) {
-    steps.push({
-      name,
-      ok: false,
-      detail: e instanceof Error ? e.message : (typeof e === "object" ? JSON.stringify(e) : String(e)),
-      ms: Math.round(performance.now() - t0),
-    });
+    const detail = e instanceof Error ? e.message : (typeof e === "object" ? JSON.stringify(e) : String(e));
+    const ms = Math.round(performance.now() - t0);
+    steps.push({ name, ok: false, detail, ms });
+    logs.push({ level: "error", ts: new Date().toISOString(), msg: `✗ ${name}: ${detail}` });
     throw e;
   }
 }
@@ -48,21 +51,35 @@ async function step<T>(
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const verifyToken = Deno.env.get("WEBHOOK_VERIFY_TOKEN");
-  if (!verifyToken) return json({ error: "WEBHOOK_VERIFY_TOKEN not configured" }, 500);
-  if (req.headers.get("x-verify-token") !== verifyToken) {
-    return json({ error: "unauthorized" }, 401);
-  }
-
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
   const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  // Authorize: either x-verify-token (server-to-server) OR a JWT belonging to
+  // a user with the `admin` role (used by the in-app smoke-test button).
+  const verifyToken = Deno.env.get("WEBHOOK_VERIFY_TOKEN");
+  const tokenHeader = req.headers.get("x-verify-token");
+  const authHeader = req.headers.get("authorization") || "";
 
   const admin = createClient(SUPABASE_URL, SERVICE, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
+  let authorized = !!verifyToken && tokenHeader === verifyToken;
+  if (!authorized && authHeader.startsWith("Bearer ")) {
+    const jwt = authHeader.slice(7);
+    const { data: u } = await admin.auth.getUser(jwt);
+    if (u?.user) {
+      const { data: role } = await admin
+        .from("user_roles").select("role").eq("user_id", u.user.id).eq("role", "admin").maybeSingle();
+      if (role) authorized = true;
+    }
+  }
+  if (!authorized) return json({ error: "unauthorized" }, 401);
+
+
   const steps: Step[] = [];
+  const logs: LogEntry[] = [];
   const stamp = Date.now() + "-" + Math.random().toString(36).slice(2, 8);
   const consumerEmail = `e2e-consumer-${stamp}@example.test`;
   const businessEmail = `e2e-business-${stamp}@example.test`;
@@ -89,7 +106,7 @@ Deno.serve(async (req) => {
 
   try {
     // ─── PROVISION ──────────────────────────────────────────────────────────
-    await step("provision: create consumer + business + service", steps, async () => {
+    await step("provision: create consumer + business + service", steps, logs, async () => {
       const { data: c, error: ce } = await admin.auth.admin.createUser({
         email: consumerEmail, password, email_confirm: true,
       });
@@ -127,7 +144,7 @@ Deno.serve(async (req) => {
     const business = await signedClient(businessEmail, password);
 
     // ─── 1. BOOK ────────────────────────────────────────────────────────────
-    await step("book: consumer creates pending booking", steps, async () => {
+    await step("book: consumer creates pending booking", steps, logs, async () => {
       const tomorrow = new Date(Date.now() + 86400_000).toISOString().slice(0, 10);
       const { data, error } = await consumer.from("bookings").insert({
         service_id: serviceId,
@@ -147,7 +164,7 @@ Deno.serve(async (req) => {
     });
 
     // ─── 2. PAY (synthetic webhook event) ──────────────────────────────────
-    await step("pay: webhook marks booking paid", steps, async () => {
+    await step("pay: webhook marks booking paid", steps, logs, async () => {
       const pi = `pi_test_${crypto.randomUUID().slice(0, 8)}`;
       const { data: upd, error: piErr } = await admin.from("bookings")
         .update({ payment_intent_id: pi }).eq("id", bookingId!)
@@ -178,14 +195,14 @@ Deno.serve(async (req) => {
     });
 
     // Business accepts so they own the lifecycle
-    await step("confirm: business confirms booking", steps, async () => {
+    await step("confirm: business confirms booking", steps, logs, async () => {
       const { error } = await business.from("bookings")
         .update({ status: "confirmed" }).eq("id", bookingId!);
       if (error) throw error;
     });
 
     // ─── 3. RESCHEDULE ──────────────────────────────────────────────────────
-    await step("reschedule: business moves to new slot", steps, async () => {
+    await step("reschedule: business moves to new slot", steps, logs, async () => {
       const newDate = new Date(Date.now() + 2 * 86400_000).toISOString().slice(0, 10);
       const { error } = await business.from("bookings")
         .update({ scheduled_date: newDate, scheduled_time: "11:30:00" })
@@ -199,7 +216,7 @@ Deno.serve(async (req) => {
     });
 
     // ─── 4. SIGN INVOICE ────────────────────────────────────────────────────
-    await step("sign invoice: business completes + signs", steps, async () => {
+    await step("sign invoice: business completes + signs", steps, logs, async () => {
       const { error } = await business.from("bookings").update({
         status: "completed",
         business_signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==",
@@ -219,7 +236,7 @@ Deno.serve(async (req) => {
     });
 
     // ─── 5. REVIEW ──────────────────────────────────────────────────────────
-    await step("review: consumer leaves 5-star review", steps, async () => {
+    await step("review: consumer leaves 5-star review", steps, logs, async () => {
       const { data, error } = await consumer.from("reviews").insert({
         booking_id: bookingId!,
         business_id: businessId!,
@@ -243,17 +260,33 @@ Deno.serve(async (req) => {
       }
     });
 
+    // Capture webhook events related to this booking before teardown wipes them.
+    let webhookEvents: unknown[] = [];
+    if (bookingId) {
+      const { data } = await admin
+        .from("stripe_webhook_events")
+        .select("event_id, event_type, processing_status, signature_verified, payment_intent_id, error_message, received_at, processed_at")
+        .eq("related_booking_id", bookingId)
+        .order("received_at", { ascending: true });
+      webhookEvents = data ?? [];
+    }
+
     return json({
       ok: true,
       summary: `${steps.filter(s => s.ok).length}/${steps.length} steps passed`,
       bookingId, consumerEmail, businessEmail,
       steps,
+      logs,
+      webhook_events: webhookEvents,
+      ranAt: new Date().toISOString(),
     });
   } catch (e) {
     return json({
       ok: false,
       error: e instanceof Error ? e.message : (typeof e === "object" ? JSON.stringify(e) : String(e)),
       steps,
+      logs,
+      ranAt: new Date().toISOString(),
     }, 500);
   } finally {
     // ─── TEARDOWN (best-effort) ────────────────────────────────────────────

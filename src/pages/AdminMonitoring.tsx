@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { AlertTriangle, CheckCircle2, RefreshCcw, ShieldAlert, Loader2 } from "lucide-react";
+import { SmokeTestPanel } from "@/components/admin/SmokeTestPanel";
 
 type Alert = {
   id: string;
@@ -188,6 +189,8 @@ export default function AdminMonitoring() {
             <CardContent className="text-3xl font-bold text-amber-600">{counts.warning}</CardContent>
           </Card>
         </div>
+
+        <SmokeTestPanel />
 
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
