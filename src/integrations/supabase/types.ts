@@ -417,6 +417,51 @@ export type Database = {
           },
         ]
       }
+      monitoring_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          dedupe_key: string
+          details: Json
+          id: string
+          related_booking_id: string | null
+          related_event_id: string | null
+          resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          title: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          dedupe_key: string
+          details?: Json
+          id?: string
+          related_booking_id?: string | null
+          related_event_id?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          title: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          dedupe_key?: string
+          details?: Json
+          id?: string
+          related_booking_id?: string | null
+          related_event_id?: string | null
+          resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          title?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string

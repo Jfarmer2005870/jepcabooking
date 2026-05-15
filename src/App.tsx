@@ -25,6 +25,7 @@ const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Features = lazy(() => import("./pages/Features"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
+const AdminMonitoring = lazy(() => import("./pages/AdminMonitoring"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +67,7 @@ const App = () => (
                 <Route path="/pricing" element={<Pricing />} />
                 <Route path="/features" element={<Features />} />
                 <Route path="/unsubscribe" element={<Unsubscribe />} />
+                <Route path="/admin/monitoring" element={<AdminMonitoring />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
