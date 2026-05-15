@@ -24,16 +24,25 @@ import {
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const SUPABASE_URL = Deno.env.get("VITE_SUPABASE_URL")!;
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const VERIFY_TOKEN = Deno.env.get("WEBHOOK_VERIFY_TOKEN") ?? "";
 const FN = `${SUPABASE_URL}/functions/v1/stripe-webhook`;
 const VERIFY_FN = `${SUPABASE_URL}/functions/v1/verify-stripe-webhook`;
+const HAS_DB = SERVICE_ROLE.length > 0;
 
-const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
-  auth: { persistSession: false },
-});
+const admin = HAS_DB
+  ? createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } })
+  : (null as any);
 
 const TAG = `wh-test-${Date.now()}`;
+
+function skipIfNoDb(name: string): boolean {
+  if (!HAS_DB) {
+    console.warn(`⚠ skipping "${name}" — SUPABASE_SERVICE_ROLE_KEY not in .env`);
+    return true;
+  }
+  return false;
+}
 
 async function makeTestBooking(): Promise<{ bookingId: string; pi: string }> {
   const { data: svc } = await admin
