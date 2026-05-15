@@ -94,12 +94,23 @@ serve(async (req) => {
     console.log("Stripe webhook event:", event.type);
 
     const findBookingByPI = async (paymentIntentId: string) => {
-      const { data } = await admin
+      const { data: booking, error } = await admin
         .from("bookings")
-        .select("id, consumer_id, business_id, services(title), profiles:consumer_id(email)")
+        .select("id, consumer_id, business_id, service_id")
         .eq("payment_intent_id", paymentIntentId)
         .maybeSingle();
-      return data;
+      if (error) console.error("findBookingByPI error:", error.message);
+      if (!booking) return null;
+      // Hydrate service title + consumer email separately (no FK relationships
+      // are declared in the schema, so PostgREST embeds don't work here).
+      const [{ data: svc }, { data: prof }] = await Promise.all([
+        admin.from("services").select("title").eq("id", booking.service_id).maybeSingle(),
+        admin.from("profiles").select("email").eq("user_id", booking.consumer_id).maybeSingle(),
+      ]);
+      return { ...booking, services: svc, profiles: prof } as typeof booking & {
+        services: { title: string } | null;
+        profiles: { email: string } | null;
+      };
     };
 
     let resolvedBookingId: string | null = null;
