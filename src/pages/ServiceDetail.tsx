@@ -158,8 +158,6 @@ const ServiceDetail = () => {
             total_reviews,
             is_verified,
             service_area,
-            origin_lat,
-            origin_lng,
             free_radius_miles,
             per_mile_rate
           )
