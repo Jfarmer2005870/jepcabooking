@@ -79,6 +79,7 @@ Deno.serve(async (req) => {
 
 
   const steps: Step[] = [];
+  const logs: LogEntry[] = [];
   const stamp = Date.now() + "-" + Math.random().toString(36).slice(2, 8);
   const consumerEmail = `e2e-consumer-${stamp}@example.test`;
   const businessEmail = `e2e-business-${stamp}@example.test`;
