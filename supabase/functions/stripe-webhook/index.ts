@@ -102,15 +102,22 @@ serve(async (req) => {
       return data;
     };
 
+    let resolvedBookingId: string | null = null;
+    let resolvedStatus = "ignored";
+
     switch (event.type) {
       case "payment_intent.succeeded": {
         const pi = event.data.object as Stripe.PaymentIntent;
         const booking = await findBookingByPI(pi.id);
         if (booking) {
+          resolvedBookingId = booking.id;
           await admin
             .from("bookings")
             .update({ payment_status: "paid" })
             .eq("id", booking.id);
+          resolvedStatus = "booking_updated";
+        } else {
+          resolvedStatus = "no_matching_booking";
         }
         break;
       }
@@ -120,6 +127,7 @@ serve(async (req) => {
         const pi = event.data.object as Stripe.PaymentIntent;
         const booking = await findBookingByPI(pi.id);
         if (booking) {
+          resolvedBookingId = booking.id;
           await admin
             .from("bookings")
             .update({ payment_status: event.type === "payment_intent.canceled" ? "canceled" : "failed" })
@@ -131,6 +139,9 @@ serve(async (req) => {
             message: `There was a problem with the payment for "${(booking as any).services?.title || "your booking"}".`,
             related_id: booking.id,
           });
+          resolvedStatus = "booking_updated";
+        } else {
+          resolvedStatus = "no_matching_booking";
         }
         break;
       }
@@ -138,9 +149,10 @@ serve(async (req) => {
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
         const piId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
-        if (!piId) break;
+        if (!piId) { resolvedStatus = "no_payment_intent"; break; }
         const booking = await findBookingByPI(piId);
         if (booking) {
+          resolvedBookingId = booking.id;
           const refundedAmount = (charge.amount_refunded || 0) / 100;
           await admin
             .from("bookings")
@@ -177,6 +189,9 @@ serve(async (req) => {
               console.error("Failed to enqueue refund email:", e);
             }
           }
+          resolvedStatus = "booking_updated";
+        } else {
+          resolvedStatus = "no_matching_booking";
         }
         break;
       }
@@ -186,9 +201,10 @@ serve(async (req) => {
       case "charge.dispute.closed": {
         const dispute = event.data.object as Stripe.Dispute;
         const piId = typeof dispute.payment_intent === "string" ? dispute.payment_intent : dispute.payment_intent?.id;
-        if (!piId) break;
+        if (!piId) { resolvedStatus = "no_payment_intent"; break; }
         const booking = await findBookingByPI(piId);
         if (booking) {
+          resolvedBookingId = booking.id;
           await admin
             .from("bookings")
             .update({ dispute_status: dispute.status })
@@ -209,21 +225,28 @@ serve(async (req) => {
               related_id: booking.id,
             });
           }
+          resolvedStatus = "booking_updated";
+        } else {
+          resolvedStatus = "no_matching_booking";
         }
         break;
       }
 
       default:
         console.log("Unhandled event type:", event.type);
+        resolvedStatus = "unhandled_type";
     }
 
-    return new Response(JSON.stringify({ received: true }), {
+    await finalize(resolvedStatus, resolvedBookingId);
+
+    return new Response(JSON.stringify({ received: true, status: resolvedStatus, booking_id: resolvedBookingId }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("Webhook handler error:", message);
+    await finalize("handler_error", null, message);
     return new Response(JSON.stringify({ error: message }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
