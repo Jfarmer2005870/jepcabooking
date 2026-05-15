@@ -190,6 +190,8 @@ export default function AdminMonitoring() {
           </Card>
         </div>
 
+        <SmokeTestPanel />
+
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="open">Open ({alerts.filter((a) => !a.resolved).length})</TabsTrigger>
