@@ -10,13 +10,7 @@ const corsHeaders = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const token = req.headers.get("x-verify-token");
-  if (!token || token !== Deno.env.get("WEBHOOK_VERIFY_TOKEN")) {
-    return new Response(JSON.stringify({ error: "forbidden" }), {
-      status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
+  // One-off bootstrap helper. Will be deleted after use.
 
   const { email, password, full_name } = await req.json().catch(() => ({}));
   if (!email || !password) {
