@@ -279,3 +279,128 @@ Deno.test({
     }
   },
 });
+
+Deno.test({
+  name: "consumer flow: book → pay → reschedule → sign invoice → leave review",
+  ignore: SKIP,
+  fn: async () => {
+    if (SKIP) { console.log(SKIP_REASON); return; }
+
+    const f = await provision();
+    let bookingId: string | undefined;
+
+    try {
+      const consumer = await signedClient(f.consumerEmail, f.consumerPassword);
+      const business = await signedClient(f.businessOwnerEmail, f.businessOwnerPassword);
+
+      // ─── 1. BOOK ──────────────────────────────────────────────────────────
+      const tomorrow = new Date(Date.now() + 86400_000).toISOString().slice(0, 10);
+      const { data: booking, error: bookErr } = await consumer
+        .from("bookings")
+        .insert({
+          service_id: f.serviceId,
+          business_id: f.businessId,
+          consumer_id: f.consumerId,
+          status: "pending",
+          total_price: 105,
+          platform_fee: 5,
+          payment_status: "pending",
+          scheduled_date: tomorrow,
+          scheduled_time: "09:00:00",
+          service_address: "456 Invoice Ave, Springfield",
+          notes: "Invoice + review E2E",
+        })
+        .select("id")
+        .single();
+      assertEquals(bookErr, null, `book should succeed: ${bookErr?.message}`);
+      bookingId = booking!.id;
+
+      // ─── 2. PAY (via webhook) ────────────────────────────────────────────
+      const pi = `pi_test_inv_${crypto.randomUUID().slice(0, 8)}`;
+      await admin.from("bookings").update({ payment_intent_id: pi }).eq("id", bookingId);
+
+      const evtId = `evt_inv_${crypto.randomUUID().slice(0, 8)}`;
+      const webhookRes = await fetch(`${SUPABASE_URL}/functions/v1/stripe-webhook`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id: evtId,
+          type: "payment_intent.succeeded",
+          data: { object: { id: pi, object: "payment_intent" } },
+        }),
+      });
+      await webhookRes.json().catch(() => ({}));
+      assertEquals(webhookRes.status, 200, "webhook should accept event");
+
+      const { data: paid } = await admin
+        .from("bookings").select("payment_status").eq("id", bookingId).single();
+      assertEquals(paid!.payment_status, "paid");
+
+      // Business accepts so they own the booking lifecycle
+      await business.from("bookings").update({ status: "accepted" }).eq("id", bookingId);
+
+      // ─── 3. RESCHEDULE ───────────────────────────────────────────────────
+      const reschedDate = new Date(Date.now() + 2 * 86400_000).toISOString().slice(0, 10);
+      const { error: reschedErr } = await business
+        .from("bookings")
+        .update({ scheduled_date: reschedDate, scheduled_time: "11:30:00" })
+        .eq("id", bookingId);
+      assertEquals(reschedErr, null, `reschedule should succeed: ${reschedErr?.message}`);
+
+      // ─── 4. SIGN INVOICE (business marks completed + signs) ──────────────
+      const signedAt = new Date().toISOString();
+      const { error: signErr } = await business
+        .from("bookings")
+        .update({
+          status: "completed",
+          business_signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==",
+          business_signature_name: "Provider Owner",
+          business_signature_at: signedAt,
+          invoice_photos: ["https://example.test/invoice-photo-1.jpg"],
+        })
+        .eq("id", bookingId);
+      assertEquals(signErr, null, `business sign invoice should succeed: ${signErr?.message}`);
+
+      const { data: signed } = await admin
+        .from("bookings")
+        .select("status, business_signature, business_signature_name, business_signature_at, invoice_photos")
+        .eq("id", bookingId).single();
+      assertEquals(signed!.status, "completed");
+      assert(signed!.business_signature, "business_signature should be persisted");
+      assertEquals(signed!.business_signature_name, "Provider Owner");
+      assert(signed!.business_signature_at, "business_signature_at should be set");
+      assertEquals((signed!.invoice_photos as string[]).length, 1);
+
+      // ─── 5. LEAVE REVIEW (consumer) ──────────────────────────────────────
+      const { data: review, error: reviewErr } = await consumer
+        .from("reviews")
+        .insert({
+          booking_id: bookingId,
+          business_id: f.businessId,
+          consumer_id: f.consumerId,
+          rating: 5,
+          comment: "Great work, on time and clean.",
+        })
+        .select("id, rating, comment")
+        .single();
+      assertEquals(reviewErr, null, `review insert should succeed: ${reviewErr?.message}`);
+      assertEquals(review!.rating, 5);
+      assertEquals(review!.comment, "Great work, on time and clean.");
+
+      // Consumer should be notified that the job is complete (review prompt)
+      const { data: notif } = await admin
+        .from("notifications")
+        .select("type")
+        .eq("user_id", f.consumerId)
+        .eq("related_id", bookingId)
+        .eq("type", "booking_completed")
+        .maybeSingle();
+      assert(notif, "consumer should receive booking_completed notification");
+
+      // Cleanup review (teardown handles the rest)
+      await admin.from("reviews").delete().eq("booking_id", bookingId);
+    } finally {
+      await teardown(f, bookingId);
+    }
+  },
+});
