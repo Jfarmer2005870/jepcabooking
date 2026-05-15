@@ -38,7 +38,7 @@ async function step<T>(
     steps.push({
       name,
       ok: false,
-      detail: e instanceof Error ? e.message : String(e),
+      detail: e instanceof Error ? e.message : (typeof e === "object" ? JSON.stringify(e) : String(e)),
       ms: Math.round(performance.now() - t0),
     });
     throw e;
@@ -248,7 +248,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     return json({
       ok: false,
-      error: e instanceof Error ? e.message : String(e),
+      error: e instanceof Error ? e.message : (typeof e === "object" ? JSON.stringify(e) : String(e)),
       steps,
     }, 500);
   } finally {
