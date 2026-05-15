@@ -640,6 +640,45 @@ export type Database = {
           },
         ]
       }
+      stripe_webhook_events: {
+        Row: {
+          error_message: string | null
+          event_id: string
+          event_type: string
+          payload: Json
+          payment_intent_id: string | null
+          processed_at: string | null
+          processing_status: string
+          received_at: string
+          related_booking_id: string | null
+          signature_verified: boolean
+        }
+        Insert: {
+          error_message?: string | null
+          event_id: string
+          event_type: string
+          payload: Json
+          payment_intent_id?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          received_at?: string
+          related_booking_id?: string | null
+          signature_verified?: boolean
+        }
+        Update: {
+          error_message?: string | null
+          event_id?: string
+          event_type?: string
+          payload?: Json
+          payment_intent_id?: string | null
+          processed_at?: string | null
+          processing_status?: string
+          received_at?: string
+          related_booking_id?: string | null
+          signature_verified?: boolean
+        }
+        Relationships: []
+      }
       suppressed_emails: {
         Row: {
           created_at: string
