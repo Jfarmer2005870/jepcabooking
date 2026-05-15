@@ -102,6 +102,8 @@ serve(async (req) => {
   return new Response(JSON.stringify({
     window_hours: hours,
     healthy,
+    webhook_secret: webhookSecret,
+    stripe_mode: stripeMode,
     summary: {
       total_events: total,
       signature_verified: verified,
