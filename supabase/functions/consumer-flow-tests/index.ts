@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
 
   try {
     // ─── PROVISION ──────────────────────────────────────────────────────────
-    await step("provision: create consumer + business + service", steps, async () => {
+    await step("provision: create consumer + business + service", steps, logs, async () => {
       const { data: c, error: ce } = await admin.auth.admin.createUser({
         email: consumerEmail, password, email_confirm: true,
       });
@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
     const business = await signedClient(businessEmail, password);
 
     // ─── 1. BOOK ────────────────────────────────────────────────────────────
-    await step("book: consumer creates pending booking", steps, async () => {
+    await step("book: consumer creates pending booking", steps, logs, async () => {
       const tomorrow = new Date(Date.now() + 86400_000).toISOString().slice(0, 10);
       const { data, error } = await consumer.from("bookings").insert({
         service_id: serviceId,
@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
     });
 
     // ─── 2. PAY (synthetic webhook event) ──────────────────────────────────
-    await step("pay: webhook marks booking paid", steps, async () => {
+    await step("pay: webhook marks booking paid", steps, logs, async () => {
       const pi = `pi_test_${crypto.randomUUID().slice(0, 8)}`;
       const { data: upd, error: piErr } = await admin.from("bookings")
         .update({ payment_intent_id: pi }).eq("id", bookingId!)
@@ -194,14 +194,14 @@ Deno.serve(async (req) => {
     });
 
     // Business accepts so they own the lifecycle
-    await step("confirm: business confirms booking", steps, async () => {
+    await step("confirm: business confirms booking", steps, logs, async () => {
       const { error } = await business.from("bookings")
         .update({ status: "confirmed" }).eq("id", bookingId!);
       if (error) throw error;
     });
 
     // ─── 3. RESCHEDULE ──────────────────────────────────────────────────────
-    await step("reschedule: business moves to new slot", steps, async () => {
+    await step("reschedule: business moves to new slot", steps, logs, async () => {
       const newDate = new Date(Date.now() + 2 * 86400_000).toISOString().slice(0, 10);
       const { error } = await business.from("bookings")
         .update({ scheduled_date: newDate, scheduled_time: "11:30:00" })
@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
     });
 
     // ─── 4. SIGN INVOICE ────────────────────────────────────────────────────
-    await step("sign invoice: business completes + signs", steps, async () => {
+    await step("sign invoice: business completes + signs", steps, logs, async () => {
       const { error } = await business.from("bookings").update({
         status: "completed",
         business_signature: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==",
@@ -235,7 +235,7 @@ Deno.serve(async (req) => {
     });
 
     // ─── 5. REVIEW ──────────────────────────────────────────────────────────
-    await step("review: consumer leaves 5-star review", steps, async () => {
+    await step("review: consumer leaves 5-star review", steps, logs, async () => {
       const { data, error } = await consumer.from("reviews").insert({
         booking_id: bookingId!,
         business_id: businessId!,
