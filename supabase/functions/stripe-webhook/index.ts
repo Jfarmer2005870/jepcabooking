@@ -28,9 +28,11 @@ serve(async (req) => {
   const body = await req.text();
 
   let event: Stripe.Event;
+  let signatureVerified = false;
   try {
     if (webhookSecret && signature) {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+      signatureVerified = true;
     } else {
       // Fallback for testing without signature verification configured
       event = JSON.parse(body) as Stripe.Event;
@@ -38,11 +40,55 @@ serve(async (req) => {
     }
   } catch (err) {
     console.error("Webhook signature verification failed:", err);
+    // Best-effort: log the rejected attempt
+    try {
+      const parsed = JSON.parse(body);
+      await admin.from("stripe_webhook_events").upsert({
+        event_id: parsed?.id ?? `invalid-${crypto.randomUUID()}`,
+        event_type: parsed?.type ?? "unknown",
+        signature_verified: false,
+        processing_status: "signature_failed",
+        error_message: err instanceof Error ? err.message : String(err),
+        payload: parsed ?? {},
+      }, { onConflict: "event_id" });
+    } catch (_) { /* ignore */ }
     return new Response(JSON.stringify({ error: "Invalid signature" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  // Extract a payment_intent_id hint for later joining
+  const extractPI = (e: Stripe.Event): string | null => {
+    const obj: any = e.data.object;
+    if (obj?.object === "payment_intent") return obj.id;
+    if (typeof obj?.payment_intent === "string") return obj.payment_intent;
+    if (obj?.payment_intent?.id) return obj.payment_intent.id;
+    return null;
+  };
+
+  // Idempotent insert: if Stripe redelivers, we keep the original row
+  const piHint = extractPI(event);
+  const { error: insertErr } = await admin.from("stripe_webhook_events").upsert({
+    event_id: event.id,
+    event_type: event.type,
+    signature_verified: signatureVerified,
+    payment_intent_id: piHint,
+    processing_status: "received",
+    payload: event as unknown as Record<string, unknown>,
+  }, { onConflict: "event_id", ignoreDuplicates: true });
+  if (insertErr) console.error("Failed to log webhook event:", insertErr.message);
+
+  const finalize = async (status: string, bookingId: string | null, errorMessage: string | null = null) => {
+    await admin.from("stripe_webhook_events")
+      .update({
+        processing_status: status,
+        related_booking_id: bookingId,
+        error_message: errorMessage,
+        processed_at: new Date().toISOString(),
+      })
+      .eq("event_id", event.id);
+  };
 
   try {
     console.log("Stripe webhook event:", event.type);
