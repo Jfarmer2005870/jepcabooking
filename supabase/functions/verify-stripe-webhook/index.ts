@@ -71,6 +71,20 @@ serve(async (req) => {
     .order("created_at", { ascending: false })
     .limit(20);
 
+  // Webhook secret presence + format check
+  const wh = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
+  const stripeSecret = Deno.env.get("STRIPE_SECRET_KEY") ?? "";
+  const webhookSecret = {
+    configured: wh.length > 0,
+    format_valid: wh.startsWith("whsec_"),
+    length: wh.length,
+  };
+  const stripeMode = stripeSecret.startsWith("sk_live_")
+    ? "live"
+    : stripeSecret.startsWith("sk_test_")
+      ? "test"
+      : "unknown";
+
   // Healthy checks
   const lastEvent = events[0];
   const minutesSinceLast = lastEvent
@@ -78,14 +92,18 @@ serve(async (req) => {
     : null;
 
   const healthy =
-    total > 0 &&
-    verified === total &&
+    webhookSecret.configured &&
+    webhookSecret.format_valid &&
     failures.length === 0 &&
-    (stuck?.length ?? 0) === 0;
+    (stuck?.length ?? 0) === 0 &&
+    (total === 0 || verified === total);
+
 
   return new Response(JSON.stringify({
     window_hours: hours,
     healthy,
+    webhook_secret: webhookSecret,
+    stripe_mode: stripeMode,
     summary: {
       total_events: total,
       signature_verified: verified,
