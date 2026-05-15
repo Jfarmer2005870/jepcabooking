@@ -143,6 +143,33 @@ const ServiceDetail = () => {
     fetchHomeAddress();
   }, [user]);
 
+  // Fetch travel estimate (server-side; doesn't expose provider coords)
+  useEffect(() => {
+    const fetchEstimate = async () => {
+      const businessId = service?.business_profiles?.id;
+      const active = useHomeAddress && homeCoords ? homeCoords : coords;
+      if (!businessId || !active) {
+        setTravelEstimate(null);
+        return;
+      }
+      const { data, error } = await supabase.rpc("get_travel_estimate", {
+        _business_id: businessId,
+        _dest_lat: active.lat,
+        _dest_lng: active.lng,
+      });
+      if (!error && data && data[0]) {
+        const r = data[0] as any;
+        setTravelEstimate({
+          distance_miles: r.distance_miles != null ? Number(r.distance_miles) : null,
+          free_radius_miles: r.free_radius_miles != null ? Number(r.free_radius_miles) : null,
+          per_mile_rate: r.per_mile_rate != null ? Number(r.per_mile_rate) : null,
+          travel_fee: r.travel_fee != null ? Number(r.travel_fee) : null,
+        });
+      }
+    };
+    fetchEstimate();
+  }, [service?.business_profiles?.id, coords, homeCoords, useHomeAddress]);
+
   const fetchService = async () => {
     try {
       const { data, error } = await supabase
