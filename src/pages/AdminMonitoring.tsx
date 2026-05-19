@@ -193,6 +193,8 @@ export default function AdminMonitoring() {
 
         <SmokeTestPanel />
 
+        <GuidedTestBookingPanel />
+
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="open">Open ({alerts.filter((a) => !a.resolved).length})</TabsTrigger>
