@@ -109,10 +109,27 @@ serve(async (req) => {
         .eq("id", profile.id);
     }
 
-    // Use client-provided return_url directly (already includes /dashboard path)
-    const returnUrl = body.return_url || req.headers.get("origin") || "http://localhost:3000";
-    // Strip any path so we can build clean return/refresh URLs
-    const baseUrl = returnUrl.replace(/\/dashboard.*$/, "").replace(/\/$/, "");
+    // Validate return_url against an allowlist of trusted app origins to
+    // prevent open-redirect abuse via the Stripe onboarding flow.
+    const ALLOWED_ORIGINS = [
+      "https://jepcabooking.lovable.app",
+      "https://id-preview--d3c284da-d79e-41f4-8e4b-df82217ff9b3.lovable.app",
+      "http://localhost:3000",
+      "http://localhost:5173",
+      "http://localhost:8080",
+    ];
+    const candidate =
+      (typeof body.return_url === "string" && body.return_url) ||
+      req.headers.get("origin") ||
+      ALLOWED_ORIGINS[0];
+    let baseUrl = ALLOWED_ORIGINS[0];
+    try {
+      const u = new URL(candidate);
+      const candOrigin = `${u.protocol}//${u.host}`;
+      if (ALLOWED_ORIGINS.includes(candOrigin)) baseUrl = candOrigin;
+    } catch {
+      // fall back to default
+    }
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       refresh_url: `${baseUrl}/dashboard`,
