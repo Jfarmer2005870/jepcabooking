@@ -84,7 +84,19 @@ serve(async (req) => {
     }
 
     if (action === "delete") {
-      if (!payment_method_id) throw new Error("Payment method ID required");
+      if (!payment_method_id || typeof payment_method_id !== "string") {
+        throw new Error("Payment method ID required");
+      }
+      // Verify the payment method belongs to this user's Stripe customer
+      // before detaching, otherwise an attacker who knows another user's
+      // pm_xxx ID could remove their saved card.
+      const pm = await stripe.paymentMethods.retrieve(payment_method_id);
+      if (pm.customer !== customerId) {
+        return new Response(JSON.stringify({ error: "Forbidden" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
       await stripe.paymentMethods.detach(payment_method_id);
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
