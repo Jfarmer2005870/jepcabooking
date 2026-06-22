@@ -147,11 +147,11 @@ const OnboardingGuide = () => {
 
     const tick = () => {
       if (cancelled) return;
+      const el = document.querySelector(`[data-tour="${current.target}"]`) as HTMLElement | null;
       const r = getRect(current.target!);
       if (r) {
         if (!scrolled) {
           scrolled = true;
-          const el = document.querySelector(`[data-tour="${current.target}"]`) as HTMLElement | null;
           el?.scrollIntoView({ behavior: "smooth", block: "center" });
         }
         if (isInViewport(r)) {
@@ -161,6 +161,12 @@ const OnboardingGuide = () => {
         }
       }
       if (performance.now() - start > TIMEOUT) {
+        // Element doesn't exist on this page or is hidden — skip silently instead of erroring.
+        if (!el) {
+          if (step < steps.length - 1) setStep((s) => s + 1);
+          else finish();
+          return;
+        }
         setRect(r);
         setTimedOut(true);
         return;
