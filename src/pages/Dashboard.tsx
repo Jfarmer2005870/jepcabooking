@@ -33,6 +33,19 @@ const Dashboard = () => {
       <Header />
       <main className="flex-1 pt-20 md:pt-24">
         <div className="container mx-auto px-4 py-8">
+          <div className="mb-6 flex items-center gap-4 rounded-lg border bg-card p-4 shadow-sm">
+            <img
+              src="/app-icon.png"
+              alt="Jepca app icon preview"
+              className="h-20 w-20 rounded-2xl shadow-md"
+            />
+            <div>
+              <p className="text-sm font-semibold">App icon preview</p>
+              <p className="text-xs text-muted-foreground">
+                How your icon will appear on a home screen.
+              </p>
+            </div>
+          </div>
           {userRole === "business" ? (
             <BusinessDashboard />
           ) : (
