@@ -19,7 +19,6 @@ type Step = {
 const consumerSteps: Step[] = [
   { title: "Welcome to Jepca", desc: "A quick tour so you know exactly how to book a local pro." },
   { target: "search", title: "Search for a service", desc: "Type what you need — cleaning, plumbing, lawn care, anything.", placement: "bottom" },
-  { target: "address", title: "Set your address", desc: "We use it to match nearby pros and calculate travel fees.", placement: "bottom" },
   { target: "categories", title: "Or browse by category", desc: "Tap any category to jump straight to available pros.", placement: "auto" },
   { target: "tab-orders", title: "Track your bookings", desc: "Open Orders any time to see status, chat, and invoices.", placement: "top" },
   { target: "tab-account", title: "Your account", desc: "Save your address, payment methods, and re-run this tour anytime.", placement: "top" },
